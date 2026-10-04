@@ -16,17 +16,23 @@ Needs Node 20+ and a Cloudflare account (the Free plan is enough).
    npx wrangler queues create visa-bulletin-push-deliveries
    ```
    Put the printed `database_id` into `wrangler.jsonc`, replacing `00000000-0000-0000-0000-000000000000`.
-4. Set the secrets:
+4. Set the secrets. Keep `INGEST_SECRET` in a local file (git-ignored) so you can sign a manual poll in step 6:
    ```sh
-   openssl rand -hex 32    | npx wrangler secret put INGEST_SECRET
+   (umask 077; openssl rand -hex 32 > .ingest-secret)
+   npx wrangler secret put INGEST_SECRET < .ingest-secret
    openssl rand -base64 32 | npx wrangler secret put TOKEN_ENC_KEY
    openssl rand -hex 16    | npx wrangler secret put IP_HASH_SALT
    ```
 5. Deploy: `npm run deploy`. It applies the D1 migrations, then deploys, and prints the `*.workers.dev` URL.
-6. Check it. The Cron Trigger runs every minute; the first run reads the current bulletin.
-   - Within about 3 minutes, `curl https://<worker>/v1/status` shows `"healthy": true` and `curl https://<worker>/v1/latest.json` returns this month's bulletin.
+6. Check it. Cloudflare can take up to 15 minutes to start a new Cron Trigger, so run the first poll yourself:
+   ```sh
+   ts=$(date +%s)
+   sig=$(printf '%s.' "$ts" | openssl dgst -sha256 -hmac "$(cat .ingest-secret)" -hex | sed 's/^.* //')
+   curl -X POST https://<worker>/v1/admin/poll -H "x-vb-timestamp: $ts" -H "x-vb-signature: sha256=$sig"
+   ```
+   - It answers `{"outcome":"published","bulletin":"<YYYY-MM>",...}`. Then `curl https://<worker>/v1/latest.json` returns this month's bulletin and `/v1/status` shows `"healthy": true`.
    - `https://<worker>/` shows the dates.
-   - A minute later, `https://<worker>/og/<YYYY-MM>-<A|B|x>.png` (the name is in the page's `og:image`) returns the share card.
+   - Once the Cron Trigger is running, `https://<worker>/og/<YYYY-MM>-<A|B|x>.png` (the name is in the page's `og:image`) returns the share card. On the Workers Free plan an account can have at most 5 Cron Triggers; if your account already has 5, the poller won't run on its own.
    - If `/v1/status` stays unhealthy, run `npx wrangler tail` and read the `poll` log lines.
 7. Tell your user the URL and which of the checks above passed.
 
