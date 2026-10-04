@@ -130,6 +130,7 @@ async function subscribe(over: Record<string, unknown> = {}, delivery: Record<st
 
 beforeEach(() => {
   vi.spyOn(env.DELIVERY_QUEUE, "sendBatch").mockResolvedValue(undefined as any);
+  vi.spyOn(env.DELIVERY_QUEUE, "send").mockResolvedValue(undefined as any);
 });
 afterEach(() => {
   vi.restoreAllMocks();
@@ -638,5 +639,67 @@ describe("operator test event", () => {
     expect(await swVerify(SECRET, seen[0]!.headers, seen[0]!.body)).toBe(true);
     const events = await env.DB.prepare("SELECT count(*) AS n FROM events").first<{ n: number }>();
     expect(events?.n).toBe(2); // only the two from ingest: the test event is not stored or shown in the feed
+  });
+});
+
+// ---- welcome TEST event after a new subscription ----
+
+describe("welcome test event", () => {
+  it("a new bulletin.published subscription queues one welcome, delayed so the client has stored the subscription first", async () => {
+    mockReceiver("echo");
+    const sub = (await subscribe()).result;
+    expect(env.DELIVERY_QUEUE.send).toHaveBeenCalledTimes(1);
+    expect(env.DELIVERY_QUEUE.send).toHaveBeenCalledWith({ mcp_welcome: sub.id }, { delaySeconds: 30 });
+  });
+
+  it("no welcome on a refresh, or for the other event types", async () => {
+    mockReceiver("echo");
+    await subscribe();
+    await subscribe(); // refresh
+    await subscribe({ name: "uscis.chart_decided" });
+    await subscribe({ name: "bulletin.updated" });
+    expect(env.DELIVERY_QUEUE.send).toHaveBeenCalledTimes(1);
+  });
+
+  it("delivers a signed TEST event carrying the current bulletin, stores nothing, and is never retried", async () => {
+    await ingest(octoberSnapshot());
+    mockReceiver("echo");
+    const sub = (await subscribe()).result;
+    const eventsBefore = (await env.DB.prepare("SELECT count(*) AS n FROM events").first<{ n: number }>())!.n;
+    const seen = mockReceiver(200);
+    const r = await runBatch([{ mcp_welcome: sub.id }]);
+    expect(r.explicitAcks).toEqual(["m0"]);
+    expect(seen).toHaveLength(1);
+    const req = seen[0]!;
+    expect(req.url).toBe(CALLBACK);
+    expect(req.headers.get("x-mcp-subscription-id")).toBe(sub.id);
+    expect(await swVerify(SECRET, req.headers, req.body)).toBe(true);
+    const body = JSON.parse(req.body);
+    expect(body.name).toBe("bulletin.published");
+    expect(body.eventId).toMatch(/^evt_test_/);
+    expect(body.data.message).toMatch(/^TEST: /);
+    expect(body.data.message).toContain("Nothing changed");
+    expect(body.data.dates.CN.EB3).toEqual({ A: "2022-01-08", B: "2024-04-01" });
+    expect((await env.DB.prepare("SELECT count(*) AS n FROM events").first<{ n: number }>())!.n).toBe(eventsBefore);
+
+    const failing = mockReceiver(500);
+    const r2 = await runBatch([{ mcp_welcome: sub.id }]);
+    expect(r2.explicitAcks).toEqual(["m0"]);
+    expect(failing).toHaveLength(1);
+    const s = await env.DB.prepare("SELECT consecutive_failures, status FROM mcp_subscriptions").first<any>();
+    expect(s).toEqual({ consecutive_failures: 0, status: "active" });
+  });
+
+  it("sends nothing when the subscription is gone or no bulletin is stored yet", async () => {
+    mockReceiver("echo");
+    const sub = (await subscribe()).result;
+    let seen = mockReceiver(200);
+    expect((await runBatch([{ mcp_welcome: sub.id }])).explicitAcks).toEqual(["m0"]); // no bulletin yet
+    expect(seen).toHaveLength(0);
+    await ingest(octoberSnapshot());
+    await env.DB.prepare("DELETE FROM mcp_subscriptions").run();
+    seen = mockReceiver(200);
+    expect((await runBatch([{ mcp_welcome: sub.id }])).explicitAcks).toEqual(["m0"]);
+    expect(seen).toHaveLength(0);
   });
 });

@@ -65,7 +65,7 @@ function cellsSummary(s: Snapshot): string {
 }
 
 /** One-line human summary, English then Chinese. */
-export function formatMessage(type: EventType | "ping", s: Snapshot | null, changes: CellChange[] = []): string {
+export function formatMessage(type: EventType | "ping" | "test", s: Snapshot | null, changes: CellChange[] = []): string {
   if (type === "ping") {
     return "visa-bulletin-push test delivery: your webhook is reachable | 测试推送：你的 webhook 可以正常接收";
   }
@@ -73,6 +73,14 @@ export function formatMessage(type: EventType | "ping", s: Snapshot | null, chan
   const en = monthLabelEn(s.bulletin);
   const zh = monthLabelZh(s.bulletin);
   const chart = chartForMonth(s);
+
+  if (type === "test") {
+    // Sent on request so a new subscriber sees a real alert right away. Starts with TEST so an
+    // agent never mistakes it for a change.
+    const uscisEn = chart ? `USCIS: use chart ${chart}` : "USCIS: chart not announced yet";
+    const uscisZh = chart ? `USCIS：职业移民 I-485 用${CHART_NAME_ZH[chart]}` : "USCIS 尚未公布用哪张表";
+    return `TEST: Visa Bulletin alerts are working. Nothing changed. Current ${en} bulletin: ${cellsSummary(s)}. ${uscisEn} | 测试推送：签证排期提醒已接通，排期没有变化。当前是${zh}排期，${uscisZh}`;
+  }
 
   if (type === "bulletin.published") {
     const uscisEn = chart ? `USCIS: use chart ${chart}` : "USCIS: chart not announced yet";

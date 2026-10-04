@@ -10,10 +10,11 @@ import { MAX_SKEW_SECONDS } from "./ingest";
 import { type Author, type Lang, renderHome } from "./site";
 import { renderSetup, renderStop } from "./setup";
 import { renderSkill } from "./skill";
-import { handleCreateWebhook, handleDeleteWebhook, handleGetWebhook } from "./webhooks";
+import { handleCreateWebhook, handleDeleteWebhook, handleGetWebhook, handleTestWebhook } from "./webhooks";
 
 const MONTH_PATH = /^\/v1\/bulletins\/(\d{4}-(?:0[1-9]|1[0-2]))\.json$/;
 const WEBHOOK_PATH = /^\/v1\/webhooks\/(wh_[0-9a-f]{24})$/;
+const WEBHOOK_TEST_PATH = /^\/v1\/webhooks\/(wh_[0-9a-f]{24})\/test$/;
 
 function authorFrom(env: Env): Author {
   if (!env.AUTHOR_NAME) return null;
@@ -64,6 +65,8 @@ async function route(request: Request, env: Env, ctx: ExecutionContext): Promise
     if (method === "DELETE") return handleDeleteWebhook(request, env, wh[1]!);
     return errorJson(405, "method_not_allowed");
   }
+  const whTest = WEBHOOK_TEST_PATH.exec(pathname);
+  if (whTest) return method === "POST" ? handleTestWebhook(request, env, whTest[1]!) : errorJson(405, "method_not_allowed");
   if (pathname === "/mcp") {
     return handleMcp(request, env, ctx);
   }

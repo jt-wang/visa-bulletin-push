@@ -242,6 +242,40 @@ describe("agent setup instructions", () => {
     expect(md).toContain("https://vb.example/stop#id=");
     expect(md).toContain("# Set up Visa Bulletin alerts (vb.example)");
   });
+
+  it("ends every push setup with a test alert the user actually sees", async () => {
+    const md = await (await get("/setup.md")).text();
+    // Webhook agents send the test themselves, and know what to say when it arrives.
+    expect(md).toContain("POST https://vb.example/v1/webhooks/<id>/test");
+    expect(md).toMatch(/If event is test, tell me/);
+    expect(md).toMatch(/\{"delivered": true, "status": 200\}/);
+    // ChatGPT gets the welcome event without asking for it.
+    expect(md).toMatch(/starts with `TEST`/);
+  });
+});
+
+describe("test alert on the page", () => {
+  it("the Grok instruction answers a test, and the connect forms send one right after connecting", async () => {
+    const html = await (await get("/")).text();
+    expect(html).toContain("If it is a test, tell me alerts are working");
+    expect(html).toContain('"/test"');
+    expect(html).toContain("Send a test alert");
+    expect(html).toContain("test alert");
+    const zh = await (await get("/?lang=zh")).text();
+    expect(zh).toContain("发一条测试推送");
+  });
+
+  it("the stop page can also send a test alert", async () => {
+    const html = await (await get("/stop")).text();
+    expect(html).toContain('"/test"');
+    expect(html).toContain('method:"POST"');
+    expect(html).toContain("Send a test alert");
+  });
+
+  it("skill.md documents the test endpoint", async () => {
+    const md = await (await get("/skill.md")).text();
+    expect(md).toContain("/v1/webhooks/{id}/test");
+  });
 });
 
 describe("stop link", () => {

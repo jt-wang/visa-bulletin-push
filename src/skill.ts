@@ -57,6 +57,7 @@ curl -X POST ${origin}/v1/webhooks \\
 - The response contains \`signing_secret\` and \`manage_token\` once. Store them securely; never print them back to the user in shared logs.
 - Events: \`bulletin.published\`, \`bulletin.updated\`, \`uscis.chart_decided\`. Body: \`{source, event, message, sent_at, data}\`.
 - Verify: \`X-VB-Signature = "sha256=" + hex(HMAC_SHA256(signing_secret, X-VB-Timestamp + "." + raw_body))\`.
+- Test: \`POST ${origin}/v1/webhooks/{id}/test\` with \`Authorization: Bearer <manage_token>\` sends event \`test\` with the current snapshot now (at most 10 a day).
 - Unsubscribe: \`DELETE ${origin}/v1/webhooks/{id}\` with \`Authorization: Bearer <manage_token>\`.
 `;
 }

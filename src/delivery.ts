@@ -1,7 +1,7 @@
 import { decryptString } from "./crypto";
 import { nowIso } from "./http";
 import type { DeliveryMessage } from "./ingest";
-import { MAX_EVENT_BODY_BYTES, eventBody, postMcpWebhook, subscriptionSecrets } from "./mcp-events";
+import { MAX_EVENT_BODY_BYTES, eventBody, postMcpWebhook, sendWelcome, subscriptionSecrets } from "./mcp-events";
 import { type OutboundResult, postEvent } from "./outbound";
 import { validateWebhookUrl } from "./webhooks";
 
@@ -38,12 +38,25 @@ type Outcome = { msg: Msg; action: "ack" } | { msg: Msg; action: "retry"; delay:
 export async function handleQueue(batch: MessageBatch<DeliveryMessage>, env: Env): Promise<void> {
   const webhook: Array<{ msg: Msg; id: string }> = [];
   const mcp: Array<{ msg: Msg; id: string }> = [];
+  const welcomes: Array<{ msg: Msg; id: string }> = [];
   for (const m of batch.messages) {
     const b = m.body as Record<string, unknown> | undefined;
     if (typeof b?.delivery_id === "string") webhook.push({ msg: m, id: b.delivery_id });
     else if (typeof b?.mcp_delivery_id === "string") mcp.push({ msg: m, id: b.mcp_delivery_id });
+    else if (typeof b?.mcp_welcome === "string") welcomes.push({ msg: m, id: b.mcp_welcome });
     else m.ack(); // malformed, nothing to do
   }
+  // Welcome TEST events: one attempt each, acknowledged whatever the outcome.
+  await Promise.all(
+    welcomes.map(async ({ msg, id }) => {
+      try {
+        await sendWelcome(env, id);
+      } catch (e) {
+        console.error(JSON.stringify({ msg: "welcome_failed", error: String(e) }));
+      }
+      msg.ack();
+    }),
+  );
   if (!webhook.length && !mcp.length) return;
 
   const outcomes = [...(await handleWebhookMessages(webhook, env)), ...(await handleMcpMessages(mcp, env))];

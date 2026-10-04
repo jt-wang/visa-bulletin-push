@@ -83,6 +83,7 @@ curl -X POST https://<your-worker>/v1/webhooks \
 # 201 {"id":"wh_…","signing_secret":"whsec_…","manage_token":"vbm_…", ...}   shown once
 
 curl https://<your-worker>/v1/webhooks/wh_… -H 'authorization: Bearer vbm_…'            # status + last delivery
+curl -X POST https://<your-worker>/v1/webhooks/wh_…/test -H 'authorization: Bearer vbm_…'  # send a test alert now
 curl -X DELETE https://<your-worker>/v1/webhooks/wh_… -H 'authorization: Bearer vbm_…'  # delete
 ```
 
@@ -90,6 +91,7 @@ curl -X DELETE https://<your-worker>/v1/webhooks/wh_… -H 'authorization: Beare
 - `events` defaults to all three. `bearer_token` (optional) is sent back as `Authorization: Bearer …` on every delivery.
 - URL rules: `https` only; port 443 or none; no IP literals (this rejects private, loopback and link-local ranges); no `localhost`, `*.local`, `*.internal` and similar non-public suffixes; no credentials in the URL.
 - At most 10 new subscriptions (and 30 registration attempts) per client IP per UTC day.
+- `POST /v1/webhooks/{id}/test` sends event `test` with the current snapshot right away and answers `{"delivered": true, "status": 200}` or `{"delivered": false, "status": …, "error": …}`. Not stored, not counted against the subscription; at most 10 per subscription per UTC day. A new MCP `bulletin.published` subscription gets one such test (its `data.message` starts with `TEST`) about 30 seconds after it subscribes.
 
 ### Delivery
 
@@ -220,6 +222,7 @@ Stored per subscription: URL, event list, signing secret and optional bearer tok
 - JSON：`/v1/latest.json`、`/v1/bulletins.json`、`/v1/bulletins/YYYY-MM.json`
 - Atom 订阅：`/feed.atom`
 - Webhook：`POST /v1/webhooks`，先发签名的 `ping`，对方返回 2xx 才创建订阅；事件有新排期发布、排期更正、USCIS 公布用哪张表
+- 测试推送：`POST /v1/webhooks/{id}/test` 立刻发一条带当前排期的 `test` 事件；ChatGPT 订阅后约 30 秒自动收到一条以 `TEST` 开头的测试事件
 - MCP：`/mcp`，工具 `get_latest_dates`、`get_bulletin`、`check_priority_date`（输入优先日，判断表A/表B 是否排到、本月能否递交 I-485），不保存任何输入
 
 非官方整理，非法律意见，以美国国务院与 USCIS 原文为准。

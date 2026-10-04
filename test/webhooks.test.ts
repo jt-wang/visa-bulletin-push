@@ -1,7 +1,7 @@
 import { env, exports } from "cloudflare:workers";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { validateWebhookUrl } from "../src/webhooks";
-import { countRows, hmacHex } from "./helpers";
+import { countRows, hmacHex, ingest, octoberSnapshot } from "./helpers";
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -200,5 +200,84 @@ describe("GET / DELETE /v1/webhooks/:id", () => {
     });
     expect(del.status).toBe(404);
     expect(await countRows("subscriptions")).toBe(1);
+  });
+});
+
+describe("POST /v1/webhooks/:id/test", () => {
+  async function setup(bearer?: string): Promise<{ id: string; manage_token: string; signing_secret: string; seen: Seen[] }> {
+    await ingest(octoberSnapshot()); // before any subscription, so nothing is queued
+    const seen = mockSubscriber(200);
+    const res = await register({ url: "https://hooks.example.com/visa", ...(bearer ? { bearer_token: bearer } : {}) });
+    const body = (await res.json()) as any;
+    seen.length = 0;
+    return { ...body, seen };
+  }
+  function sendTest(id: string, token?: string, method = "POST"): Promise<Response> {
+    return exports.default.fetch(`https://vb.example/v1/webhooks/${id}/test`, {
+      method,
+      headers: token ? { authorization: `Bearer ${token}` } : {},
+    });
+  }
+
+  it("sends one signed `test` event with the current bulletin and reports the endpoint's answer", async () => {
+    const { id, manage_token, signing_secret, seen } = await setup("grok-token-123");
+    const eventsBefore = await countRows("events");
+    const res = await sendTest(id, manage_token);
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ delivered: true, status: 200 });
+    expect(seen).toHaveLength(1);
+    const req = seen[0]!;
+    expect(req.url).toBe("https://hooks.example.com/visa");
+    expect(req.headers.get("x-vb-event")).toBe("test");
+    expect(req.headers.get("x-vb-delivery")).toMatch(/^dl_test_/);
+    expect(req.headers.get("authorization")).toBe("Bearer grok-token-123");
+    const ts = req.headers.get("x-vb-timestamp")!;
+    expect(req.headers.get("x-vb-signature")).toBe("sha256=" + (await hmacHex(signing_secret, `${ts}.${req.body}`)));
+    const body = JSON.parse(req.body);
+    expect(body.event).toBe("test");
+    expect(body.message).toMatch(/^TEST: /);
+    expect(body.message).toContain("Nothing changed");
+    expect(body.message).toContain("CN EB3 A 2022-01-08 / B 2024-04-01");
+    expect(body.message).toContain("测试");
+    expect(body.data.bulletin).toBe("2026-10");
+    expect(body.data.dates.IN.EB2).toEqual({ A: "2013-11-01", B: "2015-01-15" });
+    expect(body.data.uscis.employment_chart).toBe("B");
+    // A test is not an event: nothing stored, delivery counters untouched.
+    expect(await countRows("events")).toBe(eventsBefore);
+    expect(await countRows("deliveries")).toBe(0);
+    const row = await env.DB.prepare("SELECT total_deliveries, consecutive_failures FROM subscriptions").first<any>();
+    expect(row).toEqual({ total_deliveries: 0, consecutive_failures: 0 });
+  });
+
+  it("reports a failing endpoint without counting it against the subscription", async () => {
+    const { id, manage_token } = await setup();
+    mockSubscriber(500);
+    const res = await sendTest(id, manage_token);
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ delivered: false, status: 500, error: "HTTP 500" });
+    const row = await env.DB.prepare("SELECT consecutive_failures, status FROM subscriptions").first<any>();
+    expect(row).toEqual({ consecutive_failures: 0, status: "active" });
+  });
+
+  it("needs the manage token: 401 without, 404 with a wrong one, and sends nothing", async () => {
+    const { id, seen } = await setup();
+    expect((await sendTest(id)).status).toBe(401);
+    expect((await sendTest(id, "vbm_wrong")).status).toBe(404);
+    expect((await sendTest("wh_000000000000000000000000", "vbm_wrong")).status).toBe(404);
+    expect(seen).toHaveLength(0);
+  });
+
+  it("allows 10 tests per subscription per UTC day", async () => {
+    const { id, manage_token, seen } = await setup();
+    for (let i = 0; i < 10; i++) expect((await sendTest(id, manage_token)).status).toBe(200);
+    const res = await sendTest(id, manage_token);
+    expect(res.status).toBe(429);
+    expect(await res.json()).toMatchObject({ error: "rate_limited" });
+    expect(seen).toHaveLength(10);
+  });
+
+  it("only accepts POST", async () => {
+    const { id, manage_token } = await setup();
+    expect((await sendTest(id, manage_token, "GET")).status).toBe(405);
   });
 });

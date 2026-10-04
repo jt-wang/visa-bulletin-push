@@ -36,10 +36,11 @@ import {
   timingSafeEqualStr,
   toHex,
 } from "./crypto";
-import { EVENT_TYPES, type EventType } from "./events";
+import { EVENT_TYPES, type EventType, formatMessage } from "./events";
 import { nowIso } from "./http";
 import { USER_AGENT } from "./outbound";
-import { validateWebhookUrl } from "./webhooks";
+import type { Snapshot } from "./snapshot";
+import { takeTestSend, validateWebhookUrl } from "./webhooks";
 
 /**
  * [SPEC] "Subscription Identity": webhook mode MUST have an authenticated principal and servers MUST
@@ -438,6 +439,15 @@ export async function handleSubscribe(env: Env, params: Record<string, unknown>)
     );
   }
   await env.DB.batch(stmts);
+  if (!existing && name === "bulletin.published") {
+    // The welcome TEST event (sendWelcome) gives a new subscriber a real alert right away. Delayed so
+    // the client has stored the subscription before the first event reaches it. Best effort.
+    try {
+      await env.DELIVERY_QUEUE.send({ mcp_welcome: id }, { delaySeconds: WELCOME_DELAY_SECONDS });
+    } catch (e) {
+      console.error(JSON.stringify({ msg: "welcome_enqueue_failed", error: String(e) }));
+    }
+  }
 
   const result: Record<string, unknown> = {
     id,
@@ -517,6 +527,40 @@ export async function subscriptionSecrets(env: Env, row: { secret_enc: string; o
  * subscription, synchronously, without storing an event (so it never reaches the Atom feed or
  * /v1/webhooks subscribers). Used to see what a subscribed agent actually receives.
  */
+export const WELCOME_DELAY_SECONDS = 30;
+
+/**
+ * One TEST event with the current bulletin to a new bulletin.published subscription (queued by
+ * handleSubscribe). One attempt, never retried, not stored, not counted in the delivery stats.
+ */
+export async function sendWelcome(env: Env, subId: string): Promise<void> {
+  const now = nowIso();
+  const [subRes, latestRes] = await env.DB.batch([
+    env.DB.prepare(
+      `SELECT id, url, secret_enc, old_secret_enc, old_secret_until FROM mcp_subscriptions
+       WHERE id = ? AND status = 'active' AND expires_at > ?`,
+    ).bind(subId, now),
+    env.DB.prepare("SELECT snapshot FROM bulletins ORDER BY month DESC LIMIT 1"),
+  ]);
+  const sub = subRes?.results[0] as
+    | { id: string; url: string; secret_enc: string; old_secret_enc: string | null; old_secret_until: string | null }
+    | undefined;
+  const latest = latestRes?.results[0] as { snapshot: string } | undefined;
+  if (!sub || !latest || !validateWebhookUrl(sub.url).ok) return;
+  if (!(await takeTestSend(env, sub.id))) return;
+  const eventId = `evt_test_${randomToken("", 9)}`;
+  const message = formatMessage("test", JSON.parse(latest.snapshot) as Snapshot);
+  const r = await postMcpWebhook({
+    url: sub.url,
+    secrets: await subscriptionSecrets(env, sub),
+    msgId: eventId,
+    subscriptionId: sub.id,
+    body: eventBody(eventId, "bulletin.published", now, message, latest.snapshot),
+    timeoutMs: 10_000,
+  });
+  console.log(JSON.stringify({ msg: "welcome_sent", status: r.status, category: r.category }));
+}
+
 export async function sendTestEvent(env: Env, marker: string): Promise<Array<{ subscription: string; status: number | null; category: string | null }>> {
   const latest = await env.DB.prepare("SELECT snapshot FROM bulletins ORDER BY month DESC LIMIT 1").first<{ snapshot: string }>();
   if (!latest) return [];

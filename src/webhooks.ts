@@ -1,4 +1,4 @@
-import { encryptString, randomId, randomToken, sha256Hex, timingSafeEqualStr } from "./crypto";
+import { decryptString, encryptString, randomId, randomToken, sha256Hex, timingSafeEqualStr } from "./crypto";
 import { EVENT_TYPES, type EventType, formatMessage } from "./events";
 import { errorJson, json, nowIso, readBodyLimited } from "./http";
 import { postEvent } from "./outbound";
@@ -8,6 +8,7 @@ export const MAX_NEW_SUBSCRIPTIONS_PER_IP_PER_DAY = 10;
 /** Ping attempts (each one is an outbound request) are capped separately so failed pings cannot be used to spray requests. */
 export const MAX_REGISTRATION_ATTEMPTS_PER_IP_PER_DAY = 30;
 const PING_TIMEOUT_MS = 8000;
+export const MAX_TESTS_PER_TARGET_PER_DAY = 10;
 
 const BLOCKED_HOSTS = new Set(["localhost"]);
 const BLOCKED_SUFFIXES = [
@@ -232,4 +233,50 @@ export async function handleDeleteWebhook(request: Request, env: Env, id: string
     env.DB.prepare("DELETE FROM subscriptions WHERE id = ?").bind(id),
   ]);
   return new Response(null, { status: 204 });
+}
+
+/**
+ * Counts one test send for `target` today and says whether it is within the daily cap.
+ * Shared with the MCP welcome event (src/mcp-events.ts).
+ */
+export async function takeTestSend(env: Env, target: string): Promise<boolean> {
+  const day = nowIso().slice(0, 10);
+  const row = await env.DB.prepare(
+    `INSERT INTO test_sends (target, day, count) VALUES (?, ?, 1)
+     ON CONFLICT (target, day) DO UPDATE SET count = count + 1
+     RETURNING count`,
+  )
+    .bind(target, day)
+    .first<{ count: number }>();
+  return (row?.count ?? 1) <= MAX_TESTS_PER_TARGET_PER_DAY;
+}
+
+/**
+ * POST /v1/webhooks/:id/test: send one `test` event with the current bulletin, now, and report what
+ * the endpoint answered. Lets a new subscriber see a real alert without waiting for the next bulletin.
+ * Not stored as an event and not counted in the delivery stats.
+ */
+export async function handleTestWebhook(request: Request, env: Env, id: string): Promise<Response> {
+  const row = await authorize(request, env, id);
+  if (row instanceof Response) return row;
+  const latest = await env.DB.prepare("SELECT snapshot FROM bulletins ORDER BY month DESC LIMIT 1").first<{ snapshot: string }>();
+  if (!latest) return errorJson(503, "no_bulletin_yet");
+  if (!(await takeTestSend(env, id))) {
+    return errorJson(429, "rate_limited", { detail: `at most ${MAX_TESTS_PER_TARGET_PER_DAY} tests per subscription per day (UTC)` });
+  }
+  const secrets = await env.DB.prepare("SELECT signing_secret_enc, bearer_token_enc FROM subscriptions WHERE id = ?")
+    .bind(id)
+    .first<{ signing_secret_enc: string; bearer_token_enc: string | null }>();
+  const snapshot = JSON.parse(latest.snapshot) as Snapshot;
+  const r = await postEvent({
+    url: row.url,
+    signingSecret: await decryptString(env.TOKEN_ENC_KEY, secrets!.signing_secret_enc),
+    bearerToken: secrets!.bearer_token_enc ? await decryptString(env.TOKEN_ENC_KEY, secrets!.bearer_token_enc) : null,
+    event: "test",
+    deliveryId: randomId("dl_test_"),
+    message: formatMessage("test", snapshot),
+    data: snapshot,
+    timeoutMs: PING_TIMEOUT_MS,
+  });
+  return json(r.ok ? { delivered: true, status: r.status } : { delivered: false, status: r.status, error: r.error });
 }

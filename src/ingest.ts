@@ -12,7 +12,7 @@ const CHUNK = 100;
 const MAX_ENQUEUE_PER_INGEST = 2000;
 
 /** One Queue message per delivery: a /v1/webhooks delivery row or an MCP event delivery row. */
-export type DeliveryMessage = { delivery_id: string } | { mcp_delivery_id: string };
+export type DeliveryMessage = { delivery_id: string } | { mcp_delivery_id: string } | { mcp_welcome: string };
 
 export async function handleIngest(request: Request, env: Env): Promise<Response> {
   const tsHeader = request.headers.get("x-vb-timestamp") ?? "";
