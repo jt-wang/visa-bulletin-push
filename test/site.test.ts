@@ -120,7 +120,8 @@ describe("home page", () => {
 
   it("has a large share card for X and other link previews", async () => {
     const html = await (await get("/")).text();
-    expect(html).toContain('<meta property="og:image" content="https://vb.example/og.png">');
+    // The latest bulletin's card (test/card.test.ts covers rendering and the static fallback).
+    expect(html).toContain('<meta property="og:image" content="https://vb.example/og/2026-10-B.png">');
     expect(html).toContain('<meta name="twitter:card" content="summary_large_image">');
   });
 

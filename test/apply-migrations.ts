@@ -19,6 +19,7 @@ beforeEach(async () => {
       "registration_limits",
       "poll_state",
       "test_sends",
+      "cards",
     ].map((t) =>
       env.DB.prepare(`DELETE FROM ${t}`),
     ),

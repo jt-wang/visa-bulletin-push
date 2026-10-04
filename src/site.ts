@@ -7,6 +7,7 @@
 // offset shadows (too loud), pure black/white/gray (no hierarchy). IBM Plex Sans for text and
 // IBM Plex Mono for every date, echoing the bulletin's own "01APR24" notation.
 
+import { cardKey } from "./card";
 import { CATEGORIES, type Category, type Cell, type Chart, type Country, type Snapshot, chartForMonth } from "./snapshot";
 
 /** Who runs this deployment. Comes from deployment config (AUTHOR_* vars); null hides the author section. */
@@ -62,7 +63,7 @@ export function describeMove(prev: Cell | null | undefined, cur: Cell): Move {
   return { kind: "back", ...monthsAndDays(cur, prev) };
 }
 
-function moveText(m: Move, lang: Lang): string {
+export function moveText(m: Move, lang: Lang): string {
   const span = (mo: number, d: number) =>
     lang === "zh"
       ? [mo ? `${mo} 个月` : "", d ? `${d} 天` : ""].filter(Boolean).join(" ")
@@ -85,7 +86,7 @@ function moveText(m: Move, lang: Lang): string {
   }
 }
 
-function moveClass(m: Move): string {
+export function moveClass(m: Move): string {
   if (m.kind === "forward" || m.kind === "reopened" || m.kind === "current") return "up";
   if (m.kind === "back" || m.kind === "unavailable") return "down";
   return "flat";
@@ -441,6 +442,9 @@ const expected = "sha256=" + crypto
   const tab = (id: string, label: string, selected: boolean) =>
     `<button type="button" role="tab" id="t-${id}" aria-controls="p-${id}" aria-selected="${selected}">${label}</button>`;
 
+  // The latest bulletin's card (src/card.ts); /og/{key}.png falls back to the static card until it exists.
+  const ogImage = latest ? `${o}/og/${cardKey(latest.snapshot)}.png` : `${o}/og.png?v=2`;
+
   return `<!doctype html>
 <html lang="${t.htmlLang}">
 <head>
@@ -452,7 +456,8 @@ const expected = "sha256=" + crypto
 <meta property="og:description" content="${esc(t.metaDesc)}">
 <meta property="og:url" content="${esc(o)}/">
 <meta name="twitter:card" content="summary_large_image">
-<meta property="og:image" content="${esc(o)}/og.png">
+<meta property="og:image" content="${esc(ogImage)}">
+<meta name="twitter:image" content="${esc(ogImage)}">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 ${author?.x ? `<meta name="twitter:creator" content="@${esc(author.x)}">` : ""}

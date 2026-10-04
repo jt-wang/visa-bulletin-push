@@ -9,6 +9,7 @@ Unofficial US Visa Bulletin employment-based cutoff dates for **China (mainland-
 - a stateless MCP server (`POST /mcp`) with MCP Events push for ChatGPT
 - `/setup.md`: instructions an AI agent follows to set itself up from one sentence; `/stop#id=…&token=…` to stop alerts
 - `/v1/status`: last check and health
+- `/og/{YYYY-MM}-{A|B|x}.png`: the share card link previews show, with the latest bulletin's dates
 
 **Unofficial. Not legal advice.** Always check the [State Department Visa Bulletin](https://travel.state.gov/content/travel/en/legal/visa-law0/visa-bulletin.html) and the [USCIS filing-charts page](https://www.uscis.gov/green-card/green-card-processes-and-procedures/visa-availability-priority-dates/adjustment-of-status-filing-charts-from-the-visa-bulletin).
 
@@ -185,6 +186,8 @@ Optional `vars` in that private config:
 | `AUTHOR_BIO_EN`, `AUTHOR_BIO_ZH` | Short author bio in each language |
 
 `npm run privacy-check` fails if any file git would commit contains a term from `.privacy-denylist` (one term per line, git-ignored), including spaced, base64 and compressed forms, or if the commit identity or timezone would reveal one. `npm run privacy-hook` installs it as a pre-commit hook; commit with `TZ=UTC git commit`. `.privacy-allow-identity` (git-ignored) lists the exact name and email you publish under. `npm run privacy-check:test` tests the check itself.
+
+**Share card.** When a new bulletin or USCIS chart appears, the Cron Trigger renders a 1200x630 card with the dates through Browser Run (`browser` binding; a few seconds of the Free plan's 10 browser minutes a day), stores it in D1 and points `og:image` at `/og/{month}-{chart}.png`. Until it exists, that URL redirects to the static `public/og.png`. The card embeds IBM Plex from `public/fonts` (SIL Open Font License, `public/fonts/OFL.txt`) through the `ASSETS` binding. If your private config serves another assets directory, copy `public/fonts` into it.
 
 Rotating `TOKEN_ENC_KEY` makes existing subscriptions undeliverable (their stored secrets can no longer be decrypted); they would need to re-register.
 

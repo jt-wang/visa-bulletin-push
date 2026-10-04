@@ -11,6 +11,16 @@ interface Env {
 }
 
 interface Env {
+  /** Static assets binding ("assets.binding" in wrangler config): the card reads its fonts through it. */
+  ASSETS?: Fetcher;
+}
+
+interface Env {
+  /** Browser Run binding ("browser" in wrangler config): renders the share card. Optional. */
+  BROWSER?: import("./card").CardBrowser;
+}
+
+interface Env {
   /** Optional deployment identity, set only in the operator's private config. */
   PUBLIC_URL?: string;
   AUTHOR_NAME?: string;

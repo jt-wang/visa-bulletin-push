@@ -5,6 +5,7 @@ import { type DeliveryMessage, handleIngest } from "./ingest";
 import { handleMcp } from "./mcp";
 import { sendTestEvent } from "./mcp-events";
 import { runPoll } from "./poll";
+import { ensureCard, handleCard } from "./card";
 import { signatureHeader, timingSafeEqualStr } from "./crypto";
 import { MAX_SKEW_SECONDS } from "./ingest";
 import { type Author, type Lang, renderHome } from "./site";
@@ -67,6 +68,9 @@ async function route(request: Request, env: Env, ctx: ExecutionContext): Promise
   }
   const whTest = WEBHOOK_TEST_PATH.exec(pathname);
   if (whTest) return method === "POST" ? handleTestWebhook(request, env, whTest[1]!) : errorJson(405, "method_not_allowed");
+  if (isRead && pathname.startsWith("/og/")) {
+    return (await handleCard(env, pathname)) ?? publicJson({ error: "not_found" }, 404);
+  }
   if (pathname === "/mcp") {
     return handleMcp(request, env, ctx);
   }
@@ -119,6 +123,8 @@ export default {
   async scheduled(controller, env): Promise<void> {
     const r = await runPoll(env, new Date(controller.scheduledTime));
     console.log(JSON.stringify({ msg: "poll", ...r }));
+    // The share card follows the latest bulletin; one D1 read when it is already there.
+    await ensureCard(env, env.BROWSER, new Date(controller.scheduledTime));
   },
 
   async queue(batch, env): Promise<void> {

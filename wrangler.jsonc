@@ -5,7 +5,9 @@
   "compatibility_date": "2026-09-30",
   "workers_dev": true,
   "triggers": { "crons": ["* * * * *"] },
-  "assets": { "directory": "public" },
+  // Browser Run renders the share card (src/card.ts). Free plan: 10 browser minutes a day.
+  "browser": { "binding": "BROWSER" },
+  "assets": { "directory": "public", "binding": "ASSETS" },
   "observability": { "enabled": true, "head_sampling_rate": 1 },
   "d1_databases": [
     {
