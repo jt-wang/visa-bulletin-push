@@ -1,0 +1,25 @@
+{
+  "name": "visa-bulletin-push",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Unofficial US Visa Bulletin (China/India employment-based) JSON API, webhooks, Atom feed and MCP server on Cloudflare Workers.",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev --compatibility-date 2026-08-15",
+    "deploy": "wrangler deploy",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "types": "wrangler types",
+    "privacy-check": "node scripts/privacy-check.mjs",
+    "privacy-hook": "printf \"#!/bin/sh\\nexec node scripts/privacy-check.mjs\\n\" > .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit",
+    "privacy-check:test": "bash scripts/privacy-check.test.sh"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "^0.22.0",
+    "@types/node": "^26.6.2",
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.11",
+    "wrangler": "^4.135.0"
+  }
+}

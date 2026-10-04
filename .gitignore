@@ -1,0 +1,15 @@
+node_modules/
+.wrangler/
+dist/
+.dev.vars
+.dev.vars.*
+!.dev.vars.example
+.env
+.env.*
+*.log
+
+# Private deployment config, private assets and the privacy denylist. Never commit.
+wrangler.production.jsonc
+.private/
+.privacy-denylist
+.privacy-allow-identity

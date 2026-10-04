@@ -1,0 +1,38 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "visa-bulletin-push",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-09-30",
+  "workers_dev": true,
+  "triggers": { "crons": ["* * * * *"] },
+  "assets": { "directory": "public" },
+  "observability": { "enabled": true, "head_sampling_rate": 1 },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "visa-bulletin-push",
+      // Replace with the id printed by `npx wrangler d1 create visa-bulletin-push`.
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "queues": {
+    "producers": [{ "binding": "DELIVERY_QUEUE", "queue": "visa-bulletin-push-deliveries" }],
+    "consumers": [
+      {
+        "queue": "visa-bulletin-push-deliveries",
+        "max_batch_size": 10,
+        "max_batch_timeout": 5,
+        // The consumer acks a message itself after its 5th failed attempt;
+        // this is only a backstop if the handler throws repeatedly.
+        "max_retries": 5
+      }
+    ]
+  },
+  "secrets": {
+    // INGEST_SECRET: signs POST /v1/ingest and /v1/admin/*.
+    // TOKEN_ENC_KEY: base64 of 32 random bytes, AES-GCM key for stored webhook secrets.
+    // IP_HASH_SALT is optional and therefore not listed here.
+    "required": ["INGEST_SECRET", "TOKEN_ENC_KEY"]
+  }
+}

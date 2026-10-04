@@ -1,0 +1,5 @@
+# Copy to .dev.vars for `npm run dev`. Never commit .dev.vars.
+INGEST_SECRET=change-me
+# base64 of 32 random bytes: openssl rand -base64 32
+TOKEN_ENC_KEY=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+IP_HASH_SALT=change-me-too
