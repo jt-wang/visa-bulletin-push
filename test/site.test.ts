@@ -270,6 +270,22 @@ describe("agent setup instructions", () => {
   });
 });
 
+describe("push, the reason to use this", () => {
+  it("says why a push beats asking an agent, and which agents take pushes, in both languages", async () => {
+    const en = (await (await get("/")).text()).replace(/&#39;/g, "'");
+    expect(en).toContain("Can't my AI agent just look it up?");
+    expect(en).toContain("can't tell whether what it found is this month's bulletin");
+    expect(en).toContain("you never have to ask");
+    expect(en).toContain("Pushes to ChatGPT (dots and Work chats), Grok Bot routines");
+    expect(en.indexOf("Can't my AI agent just look it up?")).toBeLessThan(en.indexOf("Is this official?"));
+    const zh = await (await get("/?lang=zh")).text();
+    expect(zh).toContain("让 AI 自己查一下不就行了？");
+    expect(zh).toContain("分不清搜到的是不是最新一期");
+    expect(zh).toContain("不用你去问");
+    expect(zh).toContain("推送支持 ChatGPT（dot 和 Work 对话）、Grok Bot 的 routine");
+  });
+});
+
 describe("privacy answer", () => {
   it("says exactly which address is stored: the webhook URL, not a home address", async () => {
     const en = await (await get("/")).text();

@@ -10,15 +10,17 @@ Green card dates for China and India (EB-1, EB-2, EB-3), the minute they move. O
 
 If you were born in China or India and are waiting for an employment-based green card, two dates decide your year: the final action date and the date for filing. The State Department publishes both once a month, in a PDF called the Visa Bulletin. Then, on a different website, USCIS says which of the two charts you may use to file I-485 that month.
 
-So every month people refresh two government sites, find their row in a PDF table, and work out which chart applies. Asking an AI agent doesn't help much: travel.state.gov blocks most automated visitors, so the agent either can't read the bulletin or answers from an old one.
+So every month people refresh two government sites, find their row in a PDF table, and work out which chart applies.
 
-Visa Bulletin Push reads both sources for you, answers "can I file this month?", and tells you, or your agent, when your row moves.
+Asking an AI agent doesn't fix this. It can search, but it can't tell whether what it found is this month's bulletin (travel.state.gov blocks most automated visitors, so agents often read an old copy). And you still have to remember to ask, which is no better than opening the website yourself.
+
+What you want is to be told. Visa Bulletin Push reads both sources, and when your row moves it pushes the news to you or your agent. Agents can take pushes now, though few people know it: ChatGPT dots and Work chats accept MCP Events, and a Grok Bot routine runs when a webhook arrives. Any agent that can receive a webhook works, so each agent that adds push support works with it too.
 
 ## Use it
 
 **On the web.** Open [visa.jingtao.io](https://visa.jingtao.io) and pick your country, category and priority date. You get this month's answer and how far your date moved.
 
-**In your AI agent.** Paste one sentence:
+**Pushed to your AI agent.** Paste one sentence:
 
 > Read https://visa.jingtao.io/setup.md and set up Visa Bulletin alerts for me.
 
@@ -66,6 +68,7 @@ Unofficial and not legal advice. Always check the [State Department Visa Bulleti
 美国签证排期推送：中国大陆、印度出生的职业移民 EB-1、EB-2、EB-3，表A（最终行动日期）、表B（递交申请日期），以及 USCIS 本月让职业移民 I-485 用哪张表。
 
 - 网页：[visa.jingtao.io](https://visa.jingtao.io)。选出生地、类别、优先日，直接告诉你这个月能不能递。
+- 为什么是推送：AI 自己查，分不清查到的是不是最新一期，而且你还得记得去问，这跟自己打开网站没区别。排期一动，这里就推给你的 agent。ChatGPT 的 dot 和 Work 对话已经能接收 MCP 推送，Grok Bot 的 routine 能被 webhook 触发，很多人还不知道。
 - 推给你的 AI agent：把这句话贴给它，「读一下 https://visa.jingtao.io/setup.md ，帮我设置美国签证排期推送。」它会问你的类别、自己订阅，然后马上发你一条带本月排期的测试推送。支持 Grok Bot、ChatGPT、Claude Code，以及任何能接收 webhook 的 agent。
 - 自己部署：点上面的 Deploy to Cloudflare，或者让你的编程 agent 按 [AGENTS.md](AGENTS.md) 做。Cloudflare 免费版就够用。
 - 技术细节：[docs/REFERENCE.md](docs/REFERENCE.md)。
