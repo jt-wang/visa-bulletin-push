@@ -271,12 +271,12 @@ describe("agent setup instructions", () => {
 });
 
 describe("hero and follow prompt", () => {
-  it("the lede says what decides the answer and that changes are pushed", async () => {
+  it("the lede is one short line: dates move, we push them to your agent", async () => {
     const en = (await (await get("/")).text()).replace(/&#39;/g, "'");
-    // Both groups: people waiting for approval (chart A) and people waiting to file (the chart USCIS names).
-    expect(en).toContain("Approval follows chart A, the final action date. Filing I-485 follows the chart USCIS accepts this month. When either moves, we push it to your ChatGPT, Grok Bot or webhook.");
+    const lede = (h: string) => h.match(/<p class="lede">([\s\S]*?)<\/p>/)![1]!.replace(/<[^>]+>/g, "");
+    expect(lede(en)).toBe("When the dates move, we push them to your ChatGPT or Grok Bot. China and India EB-1, EB-2, EB-3. Free.");
     const zh = await (await get("/?lang=zh")).text();
-    expect(zh).toContain("能不能批看表A（最终行动日期）；能不能递 I-485，看 USCIS 这个月认表A还是表B。任何一个变了，就推到你的 ChatGPT、Grok Bot 或 webhook。");
+    expect(lede(zh)).toBe("排期一动，就推到你的 ChatGPT 或 Grok Bot。中国大陆、印度 EB-1、EB-2、EB-3，免费。");
   });
 
   it("asks for the follow right under the checker's answer, shown once there is an answer", async () => {
