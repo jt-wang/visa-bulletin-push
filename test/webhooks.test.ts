@@ -239,6 +239,7 @@ describe("POST /v1/webhooks/:id/test", () => {
     expect(body.message).toContain("Nothing changed");
     expect(body.message).toContain("CN EB3 A 2022-01-08 / B 2024-04-01");
     expect(body.message).toContain("测试");
+    expect(body.message).toMatch(/ \(via vb\.example, @ada_example on X\)$/);
     expect(body.data.bulletin).toBe("2026-10");
     expect(body.data.dates.IN.EB2).toEqual({ A: "2013-11-01", B: "2015-01-15" });
     expect(body.data.uscis.employment_chart).toBe("B");

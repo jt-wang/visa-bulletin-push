@@ -203,6 +203,8 @@ describe("event typing", () => {
     expect(row.message).not.toContain("\n");
     expect(row.message).toContain("Oct 2026");
     expect(row.message).toContain("CN EB3 A 2022-01-08 / B 2024-04-01");
+    // Signed with the deployment and the maker's handle when both are configured.
+    expect(row.message).toMatch(/ \(via vb\.example, @ada_example on X\)$/);
     expect(row.message).toContain("USCIS: use chart B");
     expect(row.message).toContain("2026年10月");
   });

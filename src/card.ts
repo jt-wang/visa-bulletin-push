@@ -47,7 +47,43 @@ export const CARD_FONTS = {
  * card is rendered from an HTML string, a page with no origin, so the browser blocks fonts from
  * any other origin unless they send CORS headers (measured with headless Chrome 2026-10-04).
  */
-export function renderCardHtml(s: Snapshot, previous: Snapshot | null, origin: string, fonts: Record<string, string> = {}): string {
+const CHART_LABEL = { A: "final action date", B: "dates for filing" } as const;
+
+/** "+2 yr 3 mo", "+1 yr", "+5 mo", "+7 d" */
+function spanText(months: number, days: number): string {
+  const y = Math.floor(months / 12);
+  const m = months % 12;
+  const parts = [y ? `${y} yr` : "", m ? `${m} mo` : "", !y && !m && days ? `${days} d` : ""].filter(Boolean);
+  return `+${parts.join(" ")}`;
+}
+
+/** The single largest forward move against last month, across both countries, categories and charts. */
+export function biggestMove(s: Snapshot, previous: Snapshot | null): string | null {
+  if (!previous) return null;
+  let best: { score: number; text: string } | null = null;
+  for (const c of COUNTRIES) {
+    for (const cat of CATEGORIES) {
+      for (const ch of ["A", "B"] as const) {
+        const m = describeMove(previous.dates[c]?.[cat]?.[ch], s.dates[c][cat][ch]);
+        if (m.kind !== "forward") continue;
+        const score = m.months * 31 + m.days;
+        if (!best || score > best.score) {
+          best = { score, text: `${COUNTRY_NAME[c]} ${cat.replace("EB", "EB-")} ${CHART_LABEL[ch]} ${spanText(m.months, m.days)}` };
+        }
+      }
+    }
+  }
+  return best ? `Biggest move: ${best.text}` : null;
+}
+
+export function renderCardHtml(
+  s: Snapshot,
+  previous: Snapshot | null,
+  origin: string,
+  fonts: Record<string, string> = {},
+  /** The maker's X handle (AUTHOR_X); printed on the card so it travels with every share. */
+  handle: string | null = null,
+): string {
   const host = origin ? new URL(origin).host : "";
   const fontFaces = Object.entries(CARD_FONTS)
     .filter(([file]) => fonts[file])
@@ -94,11 +130,16 @@ tbody tr+tr th,tbody tr+tr td{border-top:1px solid #dee0f6}
 .bottom{display:flex;align-items:center;justify-content:space-between}
 .chip{background:#4f58c9;color:#fff;font-size:24px;font-weight:600;padding:8px 18px;border-radius:9px}
 .host{font-family:"IBM Plex Mono",monospace;font-size:24px;font-weight:600}
+.big{margin-top:8px;font-size:26px;font-weight:600;color:#3f47b0}
+.handle{font-size:24px;font-weight:600;color:#0b0c0e}
 </style></head><body><div class="wrap">
 <div class="top"><div class="brand"><svg class="logo" viewBox="0 0 24 24"><rect x="1" y="10" width="22" height="7" rx="1.5" fill="#4F58C9"/><rect x="2" y="5" width="13" height="2.4" rx="1.2" fill="#000"/><rect x="2" y="12.3" width="17" height="2.4" rx="1.2" fill="#000"/></svg>Visa Bulletin Push</div><div class="host">${esc(host)}</div></div>
-<h1>${esc(month)} Visa Bulletin</h1>
+<div><h1>${esc(month)} Visa Bulletin</h1>${(() => {
+    const big = biggestMove(s, previous);
+    return big ? `<div class="big">${esc(big)}</div>` : "";
+  })()}</div>
 <table><thead><tr><th>Final action date</th><th>EB-1</th><th>EB-2</th><th>EB-3</th></tr></thead><tbody>${rows}</tbody></table>
-<div class="bottom"><div class="chip">${esc(uscis)}</div></div>
+<div class="bottom"><div class="chip">${esc(uscis)}</div>${handle ? `<div class="handle">@${esc(handle)} on X</div>` : ""}</div>
 </div></body></html>`;
 }
 
@@ -155,7 +196,7 @@ export async function ensureCard(env: Env, browser: CardBrowser | undefined, now
     .bind(JSON.stringify({ key, at: now.toISOString() }), now.toISOString())
     .run();
 
-  const html = renderCardHtml(latest, prevRow ? (JSON.parse(prevRow.snapshot) as Snapshot) : null, env.PUBLIC_URL ?? "", await loadFonts(env));
+  const html = renderCardHtml(latest, prevRow ? (JSON.parse(prevRow.snapshot) as Snapshot) : null, env.PUBLIC_URL ?? "", await loadFonts(env), env.AUTHOR_X ?? null);
   try {
     const png = await toBytes(
       await browser.quickAction("screenshot", {

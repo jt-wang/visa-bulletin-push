@@ -1,6 +1,8 @@
 # Visa Bulletin Push
 
-Green card dates for China and India (EB-1, EB-2, EB-3), the minute they move. On a web page, in your AI agent, or as a webhook. Free and open source; the whole thing runs on one Cloudflare Worker on the free plan.
+Can you file I-485 this month? Can you get approved? Approval follows chart A of the Visa Bulletin; filing follows whichever chart USCIS accepts that month. When either moves for China or India EB-1, EB-2 or EB-3, Visa Bulletin Push sends it to your ChatGPT, Grok Bot or any webhook. Setup is one sentence to your agent.
+
+Free and open source. The whole thing runs on one Cloudflare Worker on the free plan.
 
 **Try it: [visa.jingtao.io](https://visa.jingtao.io)**
 

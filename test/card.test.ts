@@ -33,6 +33,11 @@ describe("share card content", () => {
     expect(html).toContain("Reopened"); // IN EB-1 was unavailable last month
     expect(html).toMatch(/USCIS[^<]*chart B/);
     expect(html).toContain("vb.example");
+    // The biggest move goes first, so a shared card says what changed.
+    expect(html).toContain("Biggest move: China mainland EB-2 dates for filing +1 yr");
+    // Without a handle there is no follow line; with one, the card carries it.
+    expect(html).not.toContain("@");
+    expect(renderCardHtml(octoberSnapshot(), september(), "https://vb.example", {}, "ada_example")).toContain("@ada_example on X");
     expect(html).toContain('width:1200px');
     // No fonts passed: no @font-face, and never a third-party font host.
     expect(html).not.toContain("@font-face");
@@ -53,6 +58,7 @@ describe("share card content", () => {
     expect(html).toContain("Current");
     expect(html).toContain("Unavailable");
     expect(html).not.toContain('class="mv'); // no previous month, no moves
+    expect(html).not.toContain("Biggest move");
   });
 
   it("keys the card by month and USCIS chart, so a new chart makes a new image", () => {

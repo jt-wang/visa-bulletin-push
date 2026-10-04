@@ -36,7 +36,7 @@ import {
   timingSafeEqualStr,
   toHex,
 } from "./crypto";
-import { EVENT_TYPES, type EventType, formatMessage } from "./events";
+import { EVENT_TYPES, type EventType, formatMessage, messageFooter } from "./events";
 import { nowIso } from "./http";
 import { USER_AGENT } from "./outbound";
 import type { Snapshot } from "./snapshot";
@@ -549,7 +549,7 @@ export async function sendWelcome(env: Env, subId: string): Promise<void> {
   if (!sub || !latest || !validateWebhookUrl(sub.url).ok) return;
   if (!(await takeTestSend(env, sub.id))) return;
   const eventId = `evt_test_${randomToken("", 9)}`;
-  const message = formatMessage("test", JSON.parse(latest.snapshot) as Snapshot);
+  const message = formatMessage("test", JSON.parse(latest.snapshot) as Snapshot) + messageFooter(env);
   const r = await postMcpWebhook({
     url: sub.url,
     secrets: await subscriptionSecrets(env, sub),

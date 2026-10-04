@@ -1,5 +1,5 @@
 import { decryptString, encryptString, randomId, randomToken, sha256Hex, timingSafeEqualStr } from "./crypto";
-import { EVENT_TYPES, type EventType, formatMessage } from "./events";
+import { EVENT_TYPES, type EventType, formatMessage, messageFooter } from "./events";
 import { errorJson, json, nowIso, readBodyLimited } from "./http";
 import { postEvent } from "./outbound";
 import type { Snapshot } from "./snapshot";
@@ -274,7 +274,7 @@ export async function handleTestWebhook(request: Request, env: Env, id: string):
     bearerToken: secrets!.bearer_token_enc ? await decryptString(env.TOKEN_ENC_KEY, secrets!.bearer_token_enc) : null,
     event: "test",
     deliveryId: randomId("dl_test_"),
-    message: formatMessage("test", snapshot),
+    message: formatMessage("test", snapshot) + messageFooter(env),
     data: snapshot,
     timeoutMs: PING_TIMEOUT_MS,
   });

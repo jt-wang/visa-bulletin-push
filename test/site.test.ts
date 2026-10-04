@@ -62,7 +62,7 @@ describe("home page", () => {
     expect(res.headers.get("content-type")).toContain("text/html");
     const html = await res.text();
     expect(html).toContain('<html lang="en"');
-    expect(html).toContain("Can I file I-485 this month?");
+    expect(html).toContain("Can I file or get approved this month?");
     expect(html).toContain('id="checker"');
     // Author details come only from deployment config (test bindings in vitest.config.ts).
     expect(html).toContain("https://x.com/ada_example");
@@ -127,9 +127,9 @@ describe("home page", () => {
 
   it("breaks the headline between clauses, never inside one", async () => {
     const en = await (await get("/?lang=en")).text();
-    expect(en).toContain('<h1><span class="l">Green card dates,</span> <span class="l">the minute they move.</span></h1>');
+    expect(en).toContain('<h1><span class="l">Can you file this month?</span> <span class="l">Can you get approved?</span></h1>');
     const zh = await (await get("/?lang=zh")).text();
-    expect(zh).toContain('<h1><span class="l">排期一动，</span> <span class="l">你第一个知道。</span></h1>');
+    expect(zh).toContain('<h1><span class="l">这个月能递吗？</span> <span class="l">能批吗？</span></h1>');
   });
 
   it("leads with one sentence that has the agent set itself up", async () => {
@@ -213,7 +213,7 @@ describe("home page", () => {
     for (const res of [await get("/?lang=zh"), await get("/", { headers: { "accept-language": "zh-CN,zh;q=0.9" } })]) {
       const html = await res.text();
       expect(html).toContain('<html lang="zh-CN"');
-      expect(html).toContain("这个月我能递 I-485 吗？");
+      expect(html).toContain("这个月我能递吗？能批吗？");
       expect(html).toContain("关注 @ada_example");
       expect(html).toContain("非官方整理，非法律意见");
       expect(html).toContain("+26 个月 24 天");
@@ -270,6 +270,30 @@ describe("agent setup instructions", () => {
   });
 });
 
+describe("hero and follow prompt", () => {
+  it("the lede says what decides the answer and that changes are pushed", async () => {
+    const en = (await (await get("/")).text()).replace(/&#39;/g, "'");
+    // Both groups: people waiting for approval (chart A) and people waiting to file (the chart USCIS names).
+    expect(en).toContain("Approval follows chart A, the final action date. Filing I-485 follows the chart USCIS accepts this month. When either moves, we push it to your ChatGPT, Grok Bot or webhook.");
+    const zh = await (await get("/?lang=zh")).text();
+    expect(zh).toContain("能不能批看表A（最终行动日期）；能不能递 I-485，看 USCIS 这个月认表A还是表B。任何一个变了，就推到你的 ChatGPT、Grok Bot 或 webhook。");
+  });
+
+  it("asks for the follow right under the checker's answer, shown once there is an answer", async () => {
+    await ingest(octoberSnapshot());
+    const html = await (await get("/")).text();
+    const verdict = html.indexOf('id="verdict"');
+    const cta = html.indexOf('id="follow-cta"');
+    expect(verdict).toBeGreaterThan(0);
+    expect(cta).toBeGreaterThan(verdict);
+    expect(html).toMatch(/<p class="follow-cta" id="follow-cta" hidden>[^<]*<a href="https:\/\/x\.com\/ada_example"/);
+    expect(html).toContain('fc.hidden=!iso(pd)');
+    const none = renderHome("https://vb.example", { snapshot: octoberSnapshot(), updated_at: "2026-10-04T00:00:00Z" } as any, null, "en", null, null);
+    expect(none).toContain('id="verdict"');
+    expect(none).not.toContain(`id="follow-cta"`);
+  });
+});
+
 describe("push, the reason to use this", () => {
   it("says why a push beats asking an agent, and which agents take pushes, in both languages", async () => {
     const en = (await (await get("/")).text()).replace(/&#39;/g, "'");
@@ -283,6 +307,16 @@ describe("push, the reason to use this", () => {
     expect(zh).toContain("分不清搜到的是不是最新一期");
     expect(zh).toContain("不用你去问");
     expect(zh).toContain("推送支持 ChatGPT（dot 和 Work 对话）、Grok Bot 的 routine");
+  });
+});
+
+describe("May 2026 USCIS memo", () => {
+  it("answers whether the memo stopped I-485 filing, in both languages", async () => {
+    const en = await (await get("/")).text();
+    expect(en).toContain("Did the May 2026 USCIS memo stop I-485 filing?");
+    expect(en).toContain("PM-602-0199");
+    const zh = await (await get("/?lang=zh")).text();
+    expect(zh).toContain("2026 年 5 月 USCIS 的备忘录是不是不让递 I-485 了？");
   });
 });
 
@@ -314,7 +348,8 @@ describe("search wording", () => {
       const title = html.match(/<title>([^<]*)<\/title>/)![1]!;
       const desc = html.match(/<meta name="description" content="([^"]*)"/)![1]!;
       const lede = html.match(/<p class="lede">([\s\S]*?)<\/p>/)![1]!;
-      for (const text of [title, desc, lede]) expect(text).toContain("EB-2");
+      for (const text of [title, desc, lede.replace(/<[^>]+>/g, "")]) expect(text).toContain("EB-2");
+      expect(lede).toMatch(/<span class="nw">EB-2[,.，、。]?<\/span>/); // never split at the hyphen
       expect(html).not.toMatch(/EB-?1 ?(to|至|–|-) ?EB-?3/);
     }
     for (const path of ["/setup.md", "/skill.md"]) {

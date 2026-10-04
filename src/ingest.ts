@@ -1,5 +1,5 @@
 import { randomId, sha256Hex, signatureHeader, timingSafeEqualStr } from "./crypto";
-import { type StoredBulletin, decideEvents, formatMessage } from "./events";
+import { type StoredBulletin, decideEvents, formatMessage, messageFooter } from "./events";
 import { errorJson, json, nowIso, readBodyLimited } from "./http";
 import { mcpDeliveryInsert } from "./mcp-events";
 import { type Snapshot, chartForMonth, signalString, validateSnapshot } from "./snapshot";
@@ -83,7 +83,7 @@ export async function applySnapshot(env: Env, incoming: Snapshot): Promise<Apply
     stmts.push(
       env.DB.prepare(
         "INSERT INTO events (id, type, month, message, data, created_at) VALUES (?, ?, ?, ?, ?, ?)",
-      ).bind(id, type, merged.bulletin, formatMessage(type, merged, changes), mergedJson, now),
+      ).bind(id, type, merged.bulletin, formatMessage(type, merged, changes) + messageFooter(env), mergedJson, now),
       // One delivery row per active subscription that wants this event type.
       env.DB.prepare(
         `INSERT INTO deliveries (id, event_id, subscription_id, created_at, updated_at)

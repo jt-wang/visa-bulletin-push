@@ -65,6 +65,17 @@ function cellsSummary(s: Snapshot): string {
 }
 
 /** One-line human summary, English then Chinese. */
+/**
+ * Appended to every alert message: where it came from and the maker's X handle, so a forwarded
+ * alert carries both. Empty unless PUBLIC_URL or AUTHOR_X is configured.
+ */
+export function messageFooter(env: { PUBLIC_URL?: string; AUTHOR_X?: string }): string {
+  const host = env.PUBLIC_URL ? new URL(env.PUBLIC_URL).host : "";
+  const x = env.AUTHOR_X ? `@${env.AUTHOR_X} on X` : "";
+  const parts = [host ? `via ${host}` : "", x].filter(Boolean);
+  return parts.length ? ` (${parts.join(", ")})` : "";
+}
+
 export function formatMessage(type: EventType | "ping" | "test", s: Snapshot | null, changes: CellChange[] = []): string {
   if (type === "ping") {
     return "visa-bulletin-push test delivery: your webhook is reachable | 测试推送：你的 webhook 可以正常接收";
