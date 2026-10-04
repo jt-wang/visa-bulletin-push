@@ -168,6 +168,21 @@ describe("home page", () => {
     expect(html).not.toContain("twitter:creator");
   });
 
+  it("links the source code next to the follow button, in the nav and the author section", async () => {
+    for (const path of ["/", "/?lang=zh"]) {
+      const html = await (await get(path)).text();
+      const gh = 'href="https://github.com/example/visa-bulletin-push"';
+      expect(html).toMatch(new RegExp(`<a class="btn btn-line gh" ${gh}[^>]*>[\\s\\S]*?GitHub</span></a>\\s*<a class="btn btn-line follow"`));
+      const author = html.slice(html.indexOf('id="author"'));
+      expect(author).toContain(gh);
+    }
+  });
+
+  it("shows no GitHub link when SOURCE_URL is not configured", () => {
+    const html = renderHome("https://vb.example", null, null, "en", null, { name: "Ada", x: "ada_example" });
+    expect(html).not.toContain("github.com");
+  });
+
   it("keeps the copy short", async () => {
     const html = await (await get("/")).text();
     const text = html
@@ -252,6 +267,19 @@ describe("agent setup instructions", () => {
     expect(md).toMatch(/\{"delivered": true, "status": 200\}/);
     // ChatGPT gets the welcome event without asking for it.
     expect(md).toMatch(/starts with `TEST`/);
+  });
+});
+
+describe("privacy answer", () => {
+  it("says exactly which address is stored: the webhook URL, not a home address", async () => {
+    const en = await (await get("/")).text();
+    expect(en).toContain("the webhook URL your agent receives alerts at");
+    expect(en).toContain("No name, email, home address or priority date.");
+    expect(en).toContain("one-way hash of your IP address");
+    const zh = await (await get("/?lang=zh")).text();
+    expect(zh).toContain("webhook 网址（回调地址）");
+    expect(zh).toContain("不保存姓名、邮箱、住址或优先日。");
+    expect(zh).not.toContain("webhook 只保存你的地址");
   });
 });
 

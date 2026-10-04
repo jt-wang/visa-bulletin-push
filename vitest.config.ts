@@ -25,6 +25,7 @@ export default defineConfig({
             AUTHOR_BIO_EN: "Test bio in English.",
             AUTHOR_BIO_ZH: "测试用的中文介绍。",
             PUBLIC_URL: "https://vb.example",
+            SOURCE_URL: "https://github.com/example/visa-bulletin-push",
           },
         },
       };

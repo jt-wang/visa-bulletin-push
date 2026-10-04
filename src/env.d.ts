@@ -23,6 +23,8 @@ interface Env {
 interface Env {
   /** Optional deployment identity, set only in the operator's private config. */
   PUBLIC_URL?: string;
+  /** Public repository URL; adds a GitHub button. */
+  SOURCE_URL?: string;
   AUTHOR_NAME?: string;
   AUTHOR_X?: string;
   AUTHOR_SITE?: string;

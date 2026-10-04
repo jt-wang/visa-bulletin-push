@@ -2,18 +2,19 @@
   "name": "visa-bulletin-push",
   "version": "1.0.0",
   "private": true,
-  "description": "Unofficial US Visa Bulletin (China/India employment-based) JSON API, webhooks, Atom feed and MCP server on Cloudflare Workers.",
+  "description": "Free US Visa Bulletin alerts for China and India EB-1, EB-2 and EB-3: a web page, JSON API, signed webhooks, an Atom feed and an MCP server on one Cloudflare Worker (free plan).",
   "license": "MIT",
   "type": "module",
   "scripts": {
     "dev": "wrangler dev --compatibility-date 2026-08-15",
-    "deploy": "wrangler deploy",
+    "deploy": "npm run db:migrate && wrangler deploy",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "types": "wrangler types",
     "privacy-check": "node scripts/privacy-check.mjs",
     "privacy-hook": "printf \"#!/bin/sh\\nexec node scripts/privacy-check.mjs\\n\" > .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit",
-    "privacy-check:test": "bash scripts/privacy-check.test.sh"
+    "privacy-check:test": "bash scripts/privacy-check.test.sh",
+    "db:migrate": "wrangler d1 migrations apply DB --remote"
   },
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "^0.22.0",
@@ -21,5 +22,18 @@
     "typescript": "^5.9.3",
     "vitest": "^4.1.11",
     "wrangler": "^4.135.0"
+  },
+  "cloudflare": {
+    "bindings": {
+      "INGEST_SECRET": {
+        "description": "Signs manual corrections (`POST /v1/ingest`) and on-demand polls. Generate with `openssl rand -hex 32`."
+      },
+      "TOKEN_ENC_KEY": {
+        "description": "Encrypts stored webhook secrets (AES-GCM). Generate with `openssl rand -base64 32`. Changing it later makes existing webhook subscriptions undeliverable."
+      },
+      "IP_HASH_SALT": {
+        "description": "Optional. Salt for the one-way IP hash used to limit webhook sign-ups. Generate with `openssl rand -hex 16`."
+      }
+    }
   }
 }

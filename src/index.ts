@@ -82,7 +82,7 @@ async function route(request: Request, env: Env, ctx: ExecutionContext): Promise
   if (pathname === "/") {
     const latest = await getLatest(env);
     const [previous, health] = await Promise.all([latest ? getPrevious(env, latest.snapshot.bulletin) : null, getHealth(env)]);
-    return new Response(renderHome(url.origin, latest, previous, pickLang(url, request), health?.checked_at ?? null, authorFrom(env)), {
+    return new Response(renderHome(url.origin, latest, previous, pickLang(url, request), health?.checked_at ?? null, authorFrom(env), env.SOURCE_URL ?? null), {
       headers: { "content-type": "text/html; charset=utf-8", "cache-control": PUBLIC_CACHE, vary: "Accept-Language" },
     });
   }

@@ -13,3 +13,4 @@ wrangler.production.jsonc
 .private/
 .privacy-denylist
 .privacy-allow-identity
+.privacy-allow-strings

@@ -121,6 +121,7 @@ const T = {
     lang: "中文",
     langHref: "/?lang=zh",
     follow: (x: string) => `Follow @${x}`,
+    sourceOnGithub: "Source code on GitHub",
     h1: "Green card dates, the minute they move.",
     lede: "China and India EB-1, EB-2 and EB-3, read from the official Visa Bulletin. Free for you and your AI agent.",
     cta: "Add to your agent",
@@ -207,7 +208,7 @@ const T = {
     faq: [
       ["Is this official?", "No. It's an independent reading of the State Department bulletin and the USCIS filing-charts page. Confirm with both, and with your attorney."],
       ["Which chart matters?", "Chart A is when a green card can be approved. Each month USCIS says whether it accepts chart A or chart B for filing I-485; that's the one marked above."],
-      ["What do you store about me?", "Nothing for the checker, API or MCP. For webhooks: your URL, the events you chose, and an encrypted bearer token if you gave one."],
+      ["What do you store about me?", "Nothing for the checker, API or MCP. For webhook alerts: the webhook URL your agent receives alerts at, the events you chose, the bearer token if you gave one (encrypted), and a one-way hash of your IP address to limit sign-ups. No name, email, home address or priority date."],
     ],
     disclaimer: "Unofficial. Not legal advice.",
     madeBy: "Made by",
@@ -220,6 +221,7 @@ const T = {
     lang: "English",
     langHref: "/?lang=en",
     follow: (x: string) => `关注 @${x}`,
+    sourceOnGithub: "GitHub 源代码",
     h1: "排期一动，你第一个知道。",
     lede: "中国大陆、印度 EB-1、EB-2、EB-3，直接读官方签证公告。你和你的 AI agent 都能免费用。",
     cta: "接入你的 agent",
@@ -304,7 +306,7 @@ const T = {
     faq: [
       ["这是官方的吗？", "不是。这是对美国国务院签证公告和 USCIS 用表页面的独立整理，请以官方原文和你的律师意见为准。"],
       ["该看哪张表？", "表A 决定绿卡什么时候可以获批。USCIS 每月说明递交 I-485 接受表A 还是表B，上面标出的就是那张。"],
-      ["会保存我的什么信息？", "查询、API、MCP 都不保存任何东西。webhook 只保存你的地址、你选的事件，以及加密后的 Bearer token（如果你提供了）。"],
+      ["会保存我的什么信息？", "查询、API、MCP 都不保存任何东西。Webhook 推送只保存：你的 agent 接收推送的 webhook 网址（回调地址）、你选的事件、加密后的 Bearer token（如果你提供了），以及用来限制注册次数的 IP 地址单向哈希。不保存姓名、邮箱、住址或优先日。"],
     ],
     disclaimer: "非官方整理，非法律意见。",
     madeBy: "作者",
@@ -315,6 +317,7 @@ const T = {
 // Pieces
 
 const LOGO = `<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><rect x="1" y="10" width="22" height="7" rx="1.5" fill="var(--accent)"/><rect x="2" y="5" width="13" height="2.4" rx="1.2" fill="var(--ink)"/><rect x="2" y="12.3" width="17" height="2.4" rx="1.2" fill="var(--ink)"/></svg>`;
+const GITHUB_ICON = `<svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>`;
 const X_ICON = `<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path fill="currentColor" d="M17.75 3h3.07l-6.7 7.66L22 21h-6.17l-4.83-6.32L5.47 21H2.4l7.17-8.2L2 3h6.33l4.37 5.77L17.75 3Zm-1.08 16.2h1.7L7.4 4.7H5.58l11.09 14.5Z"/></svg>`;
 const FAVICON = `data:image/svg+xml,${encodeURIComponent(LOGO.replace("var(--accent)", "#4F58C9").replace(/var\(--ink\)/g, "#000"))}`;
 
@@ -359,6 +362,8 @@ export function renderHome(
   lang: Lang,
   checkedAt: string | null = null,
   author: Author = null,
+  /** Public repository URL (SOURCE_URL); shows a GitHub button next to the follow button. */
+  sourceUrl: string | null = null,
 ): string {
   const host = new URL(origin).host;
   const t = T[lang];
@@ -592,6 +597,7 @@ details.more summary{cursor:pointer;color:var(--muted);font-size:.92rem;margin-b
 [role="tabpanel"] p.after{color:var(--muted);font-size:.95rem}
 .author{max-width:760px}
 .author p{color:var(--text);font-size:1.08rem;margin:0 0 20px}
+.author-links{display:flex;flex-wrap:wrap;gap:12px}
 .faq{max-width:760px}
 details.q{border-bottom:1px solid var(--line);padding:16px 0}
 details.q summary{cursor:pointer;font-weight:600;color:var(--ink);list-style:none;display:flex;justify-content:space-between}
@@ -610,7 +616,7 @@ footer a{color:var(--muted)}
 @media (max-width:520px){
   .wrap{padding:0 16px}
   .card{padding:20px}
-  .nav-r .follow span{display:none}
+  .nav-r .follow span,.nav-r .gh span{display:none}
   .nav-r a[href="#month"]{display:none}
   .brand span{white-space:nowrap}
   .nav-r{gap:12px}
@@ -623,6 +629,7 @@ footer a{color:var(--muted)}
   <div class="nav-r">
     <a href="#month">${esc(t.thisMonth)}</a>
     <a href="${t.langHref}" hreflang="${zh ? "en" : "zh-CN"}">${esc(t.lang)}</a>
+    ${sourceUrl ? `<a class="btn btn-line gh" href="${esc(sourceUrl)}" rel="noopener" target="_blank">${GITHUB_ICON}<span>GitHub</span></a>` : ""}
     ${author?.x ? `<a class="btn btn-line follow" href="https://x.com/${esc(author.x)}" rel="noopener" target="_blank">${X_ICON}<span>${esc(t.follow(author.x))}</span></a>` : ""}
   </div>
 </div></nav>
@@ -704,7 +711,9 @@ ${
     <div>
       <h2>${esc(t.authorTitle(author.name))}</h2>
       ${(zh ? author.bioZh : author.bioEn) ? `<p>${esc((zh ? author.bioZh : author.bioEn)!)}</p>` : ""}
-      ${author.x ? `<a class="btn btn-line" href="https://x.com/${esc(author.x)}" rel="noopener" target="_blank">${X_ICON}${esc(t.follow(author.x))}</a>` : ""}
+      <div class="author-links">${author.x ? `<a class="btn btn-line" href="https://x.com/${esc(author.x)}" rel="noopener" target="_blank">${X_ICON}${esc(t.follow(author.x))}</a>` : ""}${
+        sourceUrl ? `<a class="btn btn-line" href="${esc(sourceUrl)}" rel="noopener" target="_blank">${GITHUB_ICON}${esc(t.sourceOnGithub)}</a>` : ""
+      }</div>
     </div>
   </div>
 </div></section>`

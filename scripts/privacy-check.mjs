@@ -12,6 +12,10 @@
 // out of the files). List its exact name and email, one per line, in .privacy-allow-identity
 // (git-ignored); only those exact values are exempt, and only in the commit identity.
 //
+// Strings you chose to publish (your site's domain, your repository URL) go one per line in
+// .privacy-allow-strings (git-ignored). Each exact string, in any case, is removed before files are
+// scanned; any other use of the same term still fails.
+//
 // `npm run privacy-hook` installs it as .git/hooks/pre-commit, so commits must run under TZ=UTC.
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
@@ -38,12 +42,48 @@ const terms = readFileSync(".privacy-denylist", "utf8")
     };
   });
 
+const allowedStrings = existsSync(".privacy-allow-strings")
+  ? readFileSync(".privacy-allow-strings", "utf8").split("\n").map((l) => l.trim().toLowerCase()).filter(Boolean)
+  : [];
+function stripAllowed(text) {
+  let lower = text.toLowerCase();
+  for (const a of allowedStrings) lower = lower.split(a).join(" ");
+  return lower;
+}
+
+// The text with separators removed, plus, for each kept character, whether it starts a word. A
+// split-up term ("zebra finch") counts only when it starts a word, so "claude code" does not match "decode".
+function squeeze(lower) {
+  let out = "";
+  const starts = [];
+  let prevLetter = false;
+  for (const ch of lower) {
+    const sep = /[\s._\-\u200b-\u200d\u2060\ufeff]/.test(ch);
+    if (!sep) {
+      out += ch;
+      for (let k = 0; k < ch.length; k++) starts.push(!prevLetter);
+    }
+    prevLetter = !sep && /[\p{L}\p{N}]/u.test(ch);
+  }
+  return { out, starts };
+}
+
 function hits(text) {
-  const lower = text.toLowerCase();
-  const squeezed = lower.replace(SEPARATORS, "");
+  const lower = stripAllowed(text);
+  const sq = squeeze(lower);
   const found = new Set();
   for (const t of terms) {
-    if (t.re ? t.re.test(text) : lower.includes(t.term) || (t.squeezed.length >= 5 && squeezed.includes(t.squeezed))) found.add(t.n);
+    if (t.re ? t.re.test(lower) : lower.includes(t.term)) found.add(t.n);
+    // Split-up forms only for plain words; a term written with punctuation (a path like ".name")
+    // matches only as written.
+    else if (!t.re && t.squeezed === t.term && t.term.length >= 5) {
+      for (let i = sq.out.indexOf(t.squeezed); i >= 0; i = sq.out.indexOf(t.squeezed, i + 1)) {
+        if (sq.starts[i]) {
+          found.add(t.n);
+          break;
+        }
+      }
+    }
   }
   return found;
 }
