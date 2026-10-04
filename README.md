@@ -1,6 +1,6 @@
 # Visa Bulletin Push
 
-Can you file I-485 this month? Can you get approved? Approval follows chart A of the Visa Bulletin; filing follows whichever chart USCIS accepts that month. When either moves for China or India EB-1, EB-2 or EB-3, Visa Bulletin Push sends it to your ChatGPT, Grok Bot or any webhook. Setup is one sentence to your agent.
+Is your priority date current yet? When chart A or chart B of the Visa Bulletin reaches it, Visa Bulletin Push has your ChatGPT, Grok Bot or any webhook tell you. For China and India EB-1, EB-2 and EB-3; setup is one sentence to your agent.
 
 Free and open source. The whole thing runs on one Cloudflare Worker on the free plan.
 
@@ -26,7 +26,7 @@ What you want is to be told. Visa Bulletin Push reads both sources, and when you
 
 > Read https://visa.jingtao.io/setup.md and set up Visa Bulletin alerts for me.
 
-The agent asks which category to watch, subscribes itself and sends you a test alert with this month's dates, so you see it working today instead of at the next bulletin. It works with Grok Bot, ChatGPT (dots and Work chats, through MCP Events), Claude Code, and any agent that can receive a webhook. To stop, tell it "stop my visa bulletin alerts".
+The agent asks for your category and priority date, subscribes itself and sends you a test alert with this month's dates, so you see it working today instead of at the next bulletin. It works with Grok Bot, ChatGPT (dots and Work chats, through MCP Events), Claude Code, and any agent that can receive a webhook. To stop, tell it "stop my visa bulletin alerts".
 
 **From code.** A JSON API, signed webhooks, an Atom feed and an MCP server: [docs/REFERENCE.md](docs/REFERENCE.md).
 
@@ -71,7 +71,7 @@ Unofficial and not legal advice. Always check the [State Department Visa Bulleti
 
 - 网页：[visa.jingtao.io](https://visa.jingtao.io)。选出生地、类别、优先日，直接告诉你这个月能不能递。
 - 为什么是推送：AI 自己查，分不清查到的是不是最新一期，而且你还得记得去问，这跟自己打开网站没区别。排期一动，这里就推给你的 agent。ChatGPT 的 dot 和 Work 对话已经能接收 MCP 推送，Grok Bot 的 routine 能被 webhook 触发，很多人还不知道。
-- 推给你的 AI agent：把这句话贴给它，「读一下 https://visa.jingtao.io/setup.md ，帮我设置美国签证排期推送。」它会问你的类别、自己订阅，然后马上发你一条带本月排期的测试推送。支持 Grok Bot、ChatGPT、Claude Code，以及任何能接收 webhook 的 agent。
+- 推给你的 AI agent：把这句话贴给它，「读一下 https://visa.jingtao.io/setup.md ，帮我设置美国签证排期推送。」它会问你的类别和优先日、自己订阅，然后马上发你一条带本月排期的测试推送。支持 Grok Bot、ChatGPT、Claude Code，以及任何能接收 webhook 的 agent。
 - 自己部署：点上面的 Deploy to Cloudflare，或者让你的编程 agent 按 [AGENTS.md](AGENTS.md) 做。Cloudflare 免费版就够用。
 - 技术细节：[docs/REFERENCE.md](docs/REFERENCE.md)。
 

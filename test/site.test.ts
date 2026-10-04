@@ -62,7 +62,7 @@ describe("home page", () => {
     expect(res.headers.get("content-type")).toContain("text/html");
     const html = await res.text();
     expect(html).toContain('<html lang="en"');
-    expect(html).toContain("Can I file or get approved this month?");
+    expect(html).toContain("Is my priority date current?");
     expect(html).toContain('id="checker"');
     // Author details come only from deployment config (test bindings in vitest.config.ts).
     expect(html).toContain("https://x.com/ada_example");
@@ -127,9 +127,9 @@ describe("home page", () => {
 
   it("breaks the headline between clauses, never inside one", async () => {
     const en = await (await get("/?lang=en")).text();
-    expect(en).toContain('<h1><span class="l">Can you file this month?</span> <span class="l">Can you get approved?</span></h1>');
+    expect(en).toContain('<h1><span class="l">Is your priority date</span> <span class="l">current yet?</span></h1>');
     const zh = await (await get("/?lang=zh")).text();
-    expect(zh).toContain('<h1><span class="l">这个月能递吗？</span> <span class="l">能批吗？</span></h1>');
+    expect(zh).toContain('<h1><span class="l">你的优先日</span> <span class="l">轮到了吗？</span></h1>');
   });
 
   it("leads with one sentence that has the agent set itself up", async () => {
@@ -213,7 +213,7 @@ describe("home page", () => {
     for (const res of [await get("/?lang=zh"), await get("/", { headers: { "accept-language": "zh-CN,zh;q=0.9" } })]) {
       const html = await res.text();
       expect(html).toContain('<html lang="zh-CN"');
-      expect(html).toContain("这个月我能递吗？能批吗？");
+      expect(html).toContain("我的优先日轮到了吗？");
       expect(html).toContain("关注 @ada_example");
       expect(html).toContain("非官方整理，非法律意见");
       expect(html).toContain("+26 个月 24 天");
@@ -259,6 +259,22 @@ describe("agent setup instructions", () => {
     expect(md).toContain("# Set up Visa Bulletin alerts (vb.example)");
   });
 
+  it("asks for the priority date and has the agent say first when chart A or B reaches it", async () => {
+    const md = await (await get("/setup.md")).text();
+    expect(md).toContain("**priority date**");
+    expect(md).toContain("Keep it with you; don't send it to this service.");
+    expect(md).toContain("If chart A or chart B now reaches my date, say that first");
+    expect(md).toContain("compare their cells with their priority date");
+    const html = await (await get("/")).text();
+    expect(html).toContain("My priority date: YYYY-MM-DD.");
+    expect(html).toContain('.replace("{pd}",');
+    // No date is fine: the agent reports the category's moves instead.
+    expect(md).toContain("If your user doesn't know the date yet, set up the alerts anyway");
+    expect(html).toContain("If I gave no date, just tell me when the dates move.");
+    const zh = await (await get("/?lang=zh")).text();
+    expect(zh).toContain("没填优先日就告诉我日期怎么动了");
+  });
+
   it("ends every push setup with a test alert the user actually sees", async () => {
     const md = await (await get("/setup.md")).text();
     // Webhook agents send the test themselves, and know what to say when it arrives.
@@ -274,9 +290,9 @@ describe("hero and follow prompt", () => {
   it("the lede is one short line: dates move, we push them to your agent", async () => {
     const en = (await (await get("/")).text()).replace(/&#39;/g, "'");
     const lede = (h: string) => h.match(/<p class="lede">([\s\S]*?)<\/p>/)![1]!.replace(/<[^>]+>/g, "");
-    expect(lede(en)).toBe("When the dates move, we push them to your ChatGPT or Grok Bot. China and India EB-1, EB-2, EB-3. Free.");
+    expect(lede(en)).toBe("When chart A or chart B reaches your date, your ChatGPT or Grok Bot tells you. China and India EB-1, EB-2, EB-3. Free.");
     const zh = await (await get("/?lang=zh")).text();
-    expect(lede(zh)).toBe("排期一动，就推到你的 ChatGPT 或 Grok Bot。中国大陆、印度 EB-1、EB-2、EB-3，免费。");
+    expect(lede(zh)).toBe("表A 或表B 一轮到你，你的 ChatGPT 或 Grok Bot 马上告诉你。中国大陆、印度 EB-1、EB-2、EB-3，免费。");
   });
 
   it("asks for the follow right under the checker's answer, shown once there is an answer", async () => {
