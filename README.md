@@ -5,7 +5,7 @@ Unofficial US Visa Bulletin employment-based cutoff dates for **China (mainland-
 - a web page (`/`)
 - a JSON API (`/v1/latest.json`, `/v1/bulletins.json`, `/v1/bulletins/{YYYY-MM}.json`)
 - an Atom feed (`/feed.atom`)
-- signed webhooks (`POST /v1/webhooks`)
+- signed webhooks (`POST /v1/webhooks`), with a test alert on demand (`POST /v1/webhooks/{id}/test`)
 - a stateless MCP server (`POST /mcp`) with MCP Events push for ChatGPT
 - `/setup.md`: instructions an AI agent follows to set itself up from one sentence; `/stop#id=…&token=…` to stop alerts
 - `/v1/status`: last check and health
@@ -210,6 +210,14 @@ npm run typecheck
 | Queues: 10,000 operations/day, 24 h retention | About 3 operations per delivered message plus 1 per retry: roughly 3,000 deliveries per day. All retries finish within ~1.5 h |
 | D1 daily row limits | One delivery row per (event, subscription); MCP and read API only read |
 
+### Sources and access
+
+- **Content.** The Visa Bulletin and the USCIS filing-charts page are US Government works and public domain ([17 U.S.C. § 105](https://www.law.cornell.edu/uscode/text/17/105)); the Bureau of Consular Affairs [copyright notice](https://travel.state.gov/content/travel/en/copyright-disclaimer.html) says its information "may be copied and distributed without permission". This project republishes the dates with a link to the official source, and says it is unofficial.
+- **Hosts.** The Worker reads only public pages that need no login: the bulletin PDF and HTML on `adoptions.state.gov` (`adoption.state.gov` only if that fails), and the USCIS filing-charts page. `travel.state.gov` answers automated clients with a Cloudflare challenge, so the Worker never contacts it and reads the same official files from `adoptions.state.gov`, which serves them openly. It never solves or spoofs a challenge or CAPTCHA, and never changes its identity or address to get past a block.
+- **robots.txt** (checked 2026-10-04): `adoptions.state.gov` has none (404). `www.uscis.gov` allows the filing-charts path with `Crawl-delay: 10`; the Worker asks at most every 15 minutes while the chart is unknown, every 6 hours after.
+- **Load.** One `HEAD` every 3 minutes from the 5th of the month until the next bulletin appears, hourly otherwise; the PDF is downloaded when its size changes and once a day. Every request names the project in its `User-Agent`, with the deployment's URL when `PUBLIC_URL` is set.
+- If a source asks us to stop or changes its terms, the poller is turned off and the operator publishes through `POST /v1/ingest` instead.
+
 ## Privacy
 
 Stored per subscription: URL, event list, signing secret and optional bearer token (both AES-GCM encrypted with `TOKEN_ENC_KEY`), SHA-256 of the manage token, SHA-256 of the client IP with a salt, delivery counters. No emails, names or priority dates. MCP calls store nothing. Tokens and secrets are never logged.
@@ -226,6 +234,8 @@ Stored per subscription: URL, event list, signing secret and optional bearer tok
 - MCP：`/mcp`，工具 `get_latest_dates`、`get_bulletin`、`check_priority_date`（输入优先日，判断表A/表B 是否排到、本月能否递交 I-485），不保存任何输入
 
 非官方整理，非法律意见，以美国国务院与 USCIS 原文为准。
+
+数据来源：签证公告和 USCIS 页面是美国政府作品，属于公有领域。Worker 只读不需要登录的公开页面（`adoptions.state.gov` 上的官方 PDF 和网页、USCIS 页面），`travel.state.gov` 对自动访问弹 Cloudflare 验证，所以 Worker 不访问它，改从 `adoptions.state.gov` 读同一份官方文件（那里公开提供）；从不破解或伪造验证码和人机验证，也不换身份、换地址去绕开封锁；请求频率见上文 Sources and access。
 
 ## License
 
