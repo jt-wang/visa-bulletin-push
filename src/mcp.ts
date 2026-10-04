@@ -104,7 +104,7 @@ const TOOLS = [
   },
   {
     name: "get_bulletin",
-    description: "The full stored snapshot for one bulletin month (YYYY-MM), China and India EB1-EB3, both charts.",
+    description: "The full stored snapshot for one bulletin month (YYYY-MM), China and India EB1, EB2 and EB3, both charts.",
     inputSchema: {
       type: "object",
       properties: { month: { type: "string", pattern: "^\\d{4}-(0[1-9]|1[0-2])$", description: "YYYY-MM, e.g. 2026-10" } },

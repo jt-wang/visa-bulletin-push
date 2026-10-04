@@ -128,7 +128,7 @@ export const PAYLOAD_SCHEMA = {
 
 const DESCRIPTIONS: Record<EventType, string> = {
   "bulletin.published":
-    "A new monthly US Visa Bulletin was published: employment-based cutoff dates (EB1-EB3, China mainland-born and India, Final Action A and Dates for Filing B). About once a month.",
+    "A new monthly US Visa Bulletin was published: employment-based cutoff dates (EB1, EB2 and EB3, China mainland-born and India, Final Action A and Dates for Filing B). About once a month.",
   "bulletin.updated":
     "The State Department corrected cutoff dates in the current bulletin. data is the corrected snapshot; message lists the changed cells.",
   "uscis.chart_decided":

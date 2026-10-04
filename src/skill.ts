@@ -6,7 +6,7 @@ name: visa-bulletin
 description: Use when the user asks about US green card priority dates, the Visa Bulletin, whether they can file I-485 this month, or wants alerts when China or India EB-1/EB-2/EB-3 cutoff dates move.
 ---
 
-# Visa Bulletin (China and India, EB-1 to EB-3)
+# Visa Bulletin (China and India, EB-1, EB-2, EB-3)
 
 Unofficial, machine-readable data from the US State Department Visa Bulletin, plus the chart USCIS accepts for employment-based I-485 each month. Source and docs: ${origin}
 

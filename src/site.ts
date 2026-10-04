@@ -113,7 +113,7 @@ function dateMono(c: Cell, lang: Lang): string {
 const T = {
   en: {
     htmlLang: "en",
-    title: "Visa Bulletin Push: China and India green card dates for you and your agent",
+    title: "Visa Bulletin Push: China and India EB-1, EB-2, EB-3 green card dates for you and your agent",
     metaDesc:
       "China and India EB-1, EB-2 and EB-3 Visa Bulletin dates, both charts, plus the chart USCIS accepts this month. Free API, webhooks and MCP.",
     thisMonth: "This month",
@@ -121,7 +121,7 @@ const T = {
     langHref: "/?lang=zh",
     follow: (x: string) => `Follow @${x}`,
     h1: "Green card dates, the minute they move.",
-    lede: "China and India EB-1 to EB-3, read from the official Visa Bulletin. Free for you and your AI agent.",
+    lede: "China and India EB-1, EB-2 and EB-3, read from the official Visa Bulletin. Free for you and your AI agent.",
     cta: "Add to your agent",
     ctaAlt: "Check your date",
     checkTitle: "Can I file I-485 this month?",
@@ -213,14 +213,14 @@ const T = {
   },
   zh: {
     htmlLang: "zh-CN",
-    title: "签证排期推送：中国、印度职业移民排期，推给你和你的 AI agent",
-    metaDesc: "美国签证公告中国大陆、印度 EB-1 至 EB-3 的表A、表B，以及 USCIS 本月接受哪张表。免费 API、webhook 和 MCP。",
+    title: "签证排期推送：中国大陆、印度 EB-1、EB-2、EB-3 排期，推给你和你的 AI agent",
+    metaDesc: "美国签证公告中国大陆、印度 EB-1、EB-2、EB-3 的表A、表B，以及 USCIS 本月接受哪张表。免费 API、webhook 和 MCP。",
     thisMonth: "本月排期",
     lang: "English",
     langHref: "/?lang=en",
     follow: (x: string) => `关注 @${x}`,
     h1: "排期一动，你第一个知道。",
-    lede: "中国大陆、印度 EB-1 至 EB-3，直接读官方签证公告。你和你的 AI agent 都能免费用。",
+    lede: "中国大陆、印度 EB-1、EB-2、EB-3，直接读官方签证公告。你和你的 AI agent 都能免费用。",
     cta: "接入你的 agent",
     ctaAlt: "查我的日期",
     checkTitle: "这个月我能递 I-485 吗？",
@@ -585,8 +585,7 @@ details.by-hand>summary{cursor:pointer;font-weight:600;color:var(--ink);margin-b
 details.more{margin:0 0 10px}
 details.more summary{cursor:pointer;color:var(--muted);font-size:.92rem;margin-bottom:8px}
 [role="tabpanel"] p.after{color:var(--muted);font-size:.95rem}
-.author{display:flex;gap:28px;align-items:flex-start;max-width:760px}
-.avatar{flex:none;width:72px;height:72px;border-radius:50%;background:var(--accent-soft);color:var(--accent);border:1px solid var(--accent-line);display:grid;place-items:center;font:700 1.4rem var(--mono)}
+.author{max-width:760px}
 .author p{color:var(--text);font-size:1.08rem;margin:0 0 20px}
 .faq{max-width:760px}
 details.q{border-bottom:1px solid var(--line);padding:16px 0}
@@ -610,7 +609,6 @@ footer a{color:var(--muted)}
   .nav-r a[href="#month"]{display:none}
   .brand span{white-space:nowrap}
   .nav-r{gap:12px}
-  .author{flex-direction:column;gap:16px}
 }
 </style>
 </head>
@@ -698,7 +696,6 @@ ${
   author
     ? `<section class="sec" id="author"><div class="wrap">
   <div class="author">
-    <div class="avatar" aria-hidden="true">${esc(author.name.split(/\s+/).map((w) => w[0] ?? "").join("").slice(0, 2).toUpperCase())}</div>
     <div>
       <h2>${esc(t.authorTitle(author.name))}</h2>
       ${(zh ? author.bioZh : author.bioEn) ? `<p>${esc((zh ? author.bioZh : author.bioEn)!)}</p>` : ""}

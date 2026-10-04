@@ -19,7 +19,7 @@ You need two things: the user's **country of chargeability** (usually country of
 **employment-based category**. Use what you already know about them; otherwise ask your user once, for example:
 "Which green card category should I watch: country of birth (China mainland or India) and EB-1, EB-2 or EB-3?"
 
-This service covers **China mainland-born and India, EB-1 to EB-3** only. People born in Taiwan, Hong Kong
+This service covers **China mainland-born and India, EB-1, EB-2 and EB-3** only. People born in Taiwan, Hong Kong
 or Macau are not charged to "China mainland"; if your user is outside the coverage, tell them so and stop here.
 
 In the data, the country is \`CN\` (China mainland-born) or \`IN\` (India), the category is \`EB1\`, \`EB2\`

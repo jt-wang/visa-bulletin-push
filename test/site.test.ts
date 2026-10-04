@@ -254,6 +254,30 @@ describe("agent setup instructions", () => {
   });
 });
 
+describe("author section", () => {
+  it("shows the author's name without an initials badge", async () => {
+    const html = await (await get("/")).text();
+    expect(html).toContain('id="author"');
+    expect(html).not.toContain('class="avatar"');
+  });
+});
+
+describe("search wording", () => {
+  it("names EB-2 explicitly in the title, description and first lines, in both languages", async () => {
+    for (const path of ["/", "/?lang=zh"]) {
+      const html = await (await get(path)).text();
+      const title = html.match(/<title>([^<]*)<\/title>/)![1]!;
+      const desc = html.match(/<meta name="description" content="([^"]*)"/)![1]!;
+      const lede = html.match(/<p class="lede">([\s\S]*?)<\/p>/)![1]!;
+      for (const text of [title, desc, lede]) expect(text).toContain("EB-2");
+      expect(html).not.toMatch(/EB-?1 ?(to|至|–|-) ?EB-?3/);
+    }
+    for (const path of ["/setup.md", "/skill.md"]) {
+      expect(await (await get(path)).text()).not.toMatch(/EB-?1 ?(to|至|–|-) ?EB-?3/);
+    }
+  });
+});
+
 describe("test alert on the page", () => {
   it("the Grok instruction answers a test, and the connect forms send one right after connecting", async () => {
     const html = await (await get("/")).text();

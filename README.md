@@ -1,6 +1,6 @@
 # Visa Bulletin Push
 
-Unofficial US Visa Bulletin employment-based cutoff dates for **China (mainland-born)** and **India**, EB1–EB3, served from one Cloudflare Worker as:
+Unofficial US Visa Bulletin employment-based cutoff dates for **China (mainland-born)** and **India**, EB-1, EB-2 and EB-3, served from one Cloudflare Worker as:
 
 - a web page (`/`)
 - a JSON API (`/v1/latest.json`, `/v1/bulletins.json`, `/v1/bulletins/{YYYY-MM}.json`)
@@ -216,7 +216,7 @@ Stored per subscription: URL, event list, signing secret and optional bearer tok
 
 ## 中文说明
 
-美国国务院签证排期（Visa Bulletin）中国大陆出生、印度职业移民 EB1–EB3 的非官方整理。表A = 最终行动日期（Final Action Dates），表B = 递交申请日期（Dates for Filing）；同时给出 USCIS 本月职业移民 I-485 用哪张表。
+美国国务院签证排期（Visa Bulletin）中国大陆出生、印度职业移民 EB-1、EB-2、EB-3 的非官方整理。表A = 最终行动日期（Final Action Dates），表B = 递交申请日期（Dates for Filing）；同时给出 USCIS 本月职业移民 I-485 用哪张表。
 
 - 网页：`/`
 - JSON：`/v1/latest.json`、`/v1/bulletins.json`、`/v1/bulletins/YYYY-MM.json`
