@@ -183,6 +183,18 @@ describe("home page", () => {
     expect(html).not.toContain("github.com");
   });
 
+  it("explains both charts in the 'which chart' answer, filing first", () => {
+    const en = renderHome("https://vb.example", null, null, "en", null, null);
+    const enAnswer = en.slice(en.indexOf("Which chart matters?"), en.indexOf("What do you store about me?"));
+    expect(enAnswer).toContain("Chart B");
+    expect(enAnswer).toContain("file your I-485");
+    expect(enAnswer.indexOf("Chart B")).toBeLessThan(enAnswer.indexOf("Chart A"));
+    const zh = renderHome("https://vb.example", null, null, "zh", null, null);
+    const zhAnswer = zh.slice(zh.indexOf("该看哪张表？"), zh.indexOf("会保存我的什么信息？"));
+    expect(zhAnswer).toContain("表B（递交申请日期）");
+    expect(zhAnswer.indexOf("表B")).toBeLessThan(zhAnswer.indexOf("表A"));
+  });
+
   it("keeps the copy short", async () => {
     const html = await (await get("/")).text();
     const text = html

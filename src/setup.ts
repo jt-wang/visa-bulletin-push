@@ -27,7 +27,7 @@ This service covers **China mainland-born and India, EB-1, EB-2 and EB-3** only.
 or Macau are not charged to "China mainland"; if your user is outside the coverage, tell them so and stop here.
 
 In the data, the country is \`CN\` (China mainland-born) or \`IN\` (India), the category is \`EB1\`, \`EB2\`
-or \`EB3\`, and the chart is \`A\` (Final Action Dates: when a green card can be approved) or \`B\`
+or \`EB3\`, and the chart is \`A\` (Final Action Dates: no green card approval until the priority date is before it) or \`B\`
 (Dates for Filing: when I-485 can be filed early, if USCIS allows it). Below, "their cells" means
 \`data.dates.<country>.<category>\`, for example \`data.dates.IN.EB2\` for India EB-2. A chart has
 reached their date when the priority date is earlier than that chart's cutoff; \`C\` (current) always has,

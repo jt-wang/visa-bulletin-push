@@ -12,7 +12,7 @@ Unofficial, machine-readable data from the US State Department Visa Bulletin, pl
 
 ## What the data means
 
-- Chart **A** = Final Action Dates: when a green card can be approved.
+- Chart **A** = Final Action Dates: no green card approval until the priority date is before it; also the I-485 filing chart in months USCIS does not pick chart B.
 - Chart **B** = Dates for Filing: when I-485 can be submitted early, if USCIS allows it that month.
 - \`uscis.employment_chart\` says which chart USCIS accepts this month (\`A\`, \`B\`, or missing if not announced yet).
 - A priority date is current when it is **earlier** than the cutoff. \`C\` = current for everyone, \`U\` = unavailable.
